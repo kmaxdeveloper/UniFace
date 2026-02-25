@@ -6,12 +6,9 @@ import jakarta.persistence.*
 @Table(name = "students")
 class Student(
     @Id
-    val studentId: String = "", // student_001 (HEMIS ID bo'lishi mumkin)
-
+    val studentId: String = "",
     val fullName: String = "",
-
     val groupName: String = "",
-
     @Column(unique = true)
-    val faceId: String? = null // AWS Rekognition qaytargan ID
+    val faceId: String? = null
 )
