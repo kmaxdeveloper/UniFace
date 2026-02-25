@@ -12,20 +12,19 @@ import software.amazon.awssdk.services.rekognition.RekognitionClient
 @Configuration
 class AwsConfig {
 
-    @Value("\${aws.accessKey}")
+    @Value("\${aws.accessKey:none}")
     private lateinit var accessKey: String
 
-    @Value("\${aws.secretKey}")
+    @Value("\${aws.secretKey:none}")
     private lateinit var secretKey: String
 
-    @Value("\${aws.region:us-east-1}") // Default qiymat ham berib ketamiz
+    @Value("\${aws.region:us-east-1}")
     private lateinit var region: String
 
     @Bean
     fun rekognitionClient(): RekognitionClient {
-        // Logika: Agar qiymatlar baribir bo'sh kelsa, xatoni aniq bilamiz
-        if (accessKey.isBlank() || secretKey.isBlank()) {
-            throw RuntimeException("AWS Credentials are missing in application.properties!")
+        if (accessKey == "none" || secretKey == "none" || accessKey.isBlank()) {
+            throw RuntimeException("AWS kalitlari (aws.accessKey / aws.secretKey) topilmadi! Docker komandasini tekshiring.")
         }
 
         return RekognitionClient.builder()
