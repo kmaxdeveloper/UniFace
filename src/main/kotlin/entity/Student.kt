@@ -4,11 +4,24 @@ import jakarta.persistence.*
 
 @Entity
 @Table(name = "students")
-class Student(
+class Student() {
     @Id
-    val studentId: String = "",
-    val fullName: String = "",
-    val groupName: String = "",
+    @Column(name = "student_id")
+    var studentId: String = ""
+
+    var fullName: String = ""
+
     @Column(unique = true)
-    val faceId: String? = null
-)
+    var faceId: String = ""
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id")
+    var group: StudentGroup? = null
+
+    constructor(studentId: String, fullName: String, faceId: String, group: StudentGroup?) : this() {
+        this.studentId = studentId
+        this.fullName = fullName
+        this.faceId = faceId
+        this.group = group
+    }
+}

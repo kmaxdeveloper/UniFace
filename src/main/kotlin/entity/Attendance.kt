@@ -5,15 +5,31 @@ import java.time.LocalDateTime
 
 @Entity
 @Table(name = "attendance")
-class Attendance(
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long = 0,
+class Attendance() {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long = 0
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
-    val student: Student? = null, // null bo'lishi mumkin deb belgilaymiz, JPA uchun osonroq
+    var student: Student? = null
 
-    val timestamp: LocalDateTime = LocalDateTime.now(),
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "subject_id", nullable = false)
+    var subject: Subject? = null
 
-    val status: String = "PRESENT"
-)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "group_id", nullable = false)
+    var group: StudentGroup? = null
+
+    var teacherName: String = ""
+    var timestamp: LocalDateTime = LocalDateTime.now()
+    var status: String = "PRESENT"
+
+    constructor(student: Student, subject: Subject, group: StudentGroup, teacherName: String) : this() {
+        this.student = student
+        this.subject = subject
+        this.group = group
+        this.teacherName = teacherName
+    }
+}

@@ -1,32 +1,20 @@
 package com.uniface.controller
 
-import com.uniface.service.FaceService
-import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
+import com.uniface.repository.AttendanceRepository
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/uniface")
-class StudentController(private val faceService: FaceService) {
+@RequestMapping("/api/student")
+class StudentController(private val attendanceRepo: AttendanceRepository) {
 
-    @PostMapping("/register")
-    fun register(
-        @RequestParam("id") id: String,
-        @RequestParam("fullName") fullName: String,    // Buni qo'shdik
-        @RequestParam("groupName") groupName: String,  // Buni qo'shdik
-        @RequestParam("image") file: MultipartFile
-    ): Any {
-        // FaceService.registerFace(id, fullName, groupName, imageBytes) shaklida bo'lishi kerak
-        return faceService.registerFace(id, fullName, groupName, file.bytes)
-    }
-
-    @GetMapping("/setup")
-    fun setup(): Any {
-        return faceService.createCollection()
-    }
-
-    @PostMapping("/identify")
-    fun identify(@RequestParam("image") file: MultipartFile): Any {
-        // FaceService.identifyStudent(imageBytes)
-        return faceService.identifyStudent(file.bytes)
+    // Talaba o'zining hamma davomatlarini ko'rishi uchun
+    @GetMapping("/my-attendance/{studentId}")
+    fun getMyAttendance(@PathVariable studentId: String): ResponseEntity<Any> {
+        val list = attendanceRepo.findByStudentStudentId(studentId)
+        return ResponseEntity.ok(list)
     }
 }
