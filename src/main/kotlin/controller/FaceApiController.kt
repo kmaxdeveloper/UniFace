@@ -14,14 +14,25 @@ class FaceApiController(private val faceService: FaceService) {
     fun enroll(
         @RequestParam("studentId") id: String,
         @RequestParam("fullName") fullName: String,
-        @RequestParam("groupName") groupName: String,
+        @RequestParam("groupName") groupName: Long,
         @RequestParam("file") file: MultipartFile
     ): FaceResponse {
         return faceService.registerFace(id, fullName, groupName, file.bytes)
     }
 
     @PostMapping("/verify")
-    fun verify(@RequestParam("file") file: MultipartFile): FaceResponse {
-        return faceService.identifyStudent(file.bytes)
+    fun verify(
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam("subjectId") subjectId: Long,      // Qo'shildi
+        @RequestParam("groupId") groupId: Long,          // Qo'shildi
+        @RequestParam("teacherName") teacherName: String // Qo'shildi
+    ): FaceResponse {
+        // Endi hamma argumentlarni service'ga uzatamiz
+        return faceService.identifyStudent(
+            file.bytes,
+            subjectId,
+            groupId,
+            teacherName
+        )
     }
 }

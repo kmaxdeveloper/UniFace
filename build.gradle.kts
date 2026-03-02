@@ -36,6 +36,14 @@ dependencies {
     // Test
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation(kotlin("test"))
+
+    // Spring Security - Asosiy xavfsizlik kutubxonasi
+    implementation("org.springframework.boot:spring-boot-starter-security")
+
+    // Agar JWT ishlatmoqchi bo'lsak, bular ham kerak bo'ladi (ixtiyoriy)
+    implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
 }
 
 tasks.test {
