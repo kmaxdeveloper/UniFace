@@ -6,16 +6,18 @@ import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Component
 import java.util.*
+import javax.crypto.SecretKey
 
 @Component
-class JwtUtils {
-
-    @Value("\${jwt.secret}")
-    private lateinit var jwtSecret: String
-
+class JwtUtils(
+    // 1. Secret kalitni konstruktor orqali xavfsiz o'qiymiz
+    @Value("\${jwt.secret}") private val secret: String
+) {
     private val jwtExpirationMs = 86400000 // 24 soat
 
-    private val key = Keys.hmacShaKeyFor(jwtSecret.toByteArray())
+    // 2. Secret kalitni SecretKey obyektiga konvertatsiya qilamiz
+    // Kod yurganda emas, obyekt yaratilganda initsializatsiya bo'ladi
+    private val key: SecretKey = Keys.hmacShaKeyFor(secret.toByteArray())
 
     fun generateToken(username: String): String {
         return Jwts.builder()
