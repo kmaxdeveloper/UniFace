@@ -20,5 +20,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       AWS_ACCESS_KEY: ${MY_AWS_ACCESS_KEY}
       AWS_SECRET_KEY: ${MY_AWS_SECRET_KEY}
+      JWT_SECRET: ${MY_JWT_SECRET}
     depends_on:
       - db
