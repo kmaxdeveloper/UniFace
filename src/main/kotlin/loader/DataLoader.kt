@@ -1,7 +1,7 @@
 package com.uniface.loader
 
 import com.uniface.data.Role
-import com.uniface.dto.User
+import com.uniface.entity.User
 import com.uniface.repository.UserRepository
 import org.springframework.boot.CommandLineRunner
 import org.springframework.security.crypto.password.PasswordEncoder

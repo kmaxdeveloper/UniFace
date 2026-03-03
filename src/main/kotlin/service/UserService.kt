@@ -1,7 +1,7 @@
 package com.uniface.service
 
 import com.uniface.data.Role
-import com.uniface.dto.User
+import com.uniface.entity.User
 import com.uniface.dto.UserDto // Controller'dan keladigan ma'lumotlar
 import com.uniface.repository.UserRepository
 import org.springframework.security.crypto.password.PasswordEncoder

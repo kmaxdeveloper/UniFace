@@ -1,4 +1,4 @@
-package com.uniface.dto
+package com.uniface.entity
 
 import com.uniface.data.Role
 import jakarta.persistence.Column
