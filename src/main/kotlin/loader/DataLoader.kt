@@ -13,15 +13,21 @@ class DataLoader(
     private val passwordEncoder: PasswordEncoder
 ) : CommandLineRunner {
     override fun run(vararg args: String?) {
-        if (userRepository.findByUsername("admin") == null) {
+        // O'zgaruvchiga olib qo'yamiz, adashmaslik uchun
+        val adminUsername = "admin_komil"
+
+        // Tekshirish ham, saqlash ham bir xil login bilan bo'lishi shart!
+        if (userRepository.findByUsername(adminUsername) == null) {
             val admin = User(
-                username = "admin_komil",
-                password = passwordEncoder.encode("admin_komil2001"), // Default parol
+                username = adminUsername,
+                password = passwordEncoder.encode("admin_komil2001"),
                 fullName = "Asosiy Admin",
                 role = Role.ROLE_ADMIN
             )
             userRepository.save(admin)
-            println("Default Admin yaratildi: login: admin, parol: admin123")
+            println("✅ Default Admin yaratildi: login: $adminUsername, parol: admin_komil2001")
+        } else {
+            println("ℹ️ Admin ($adminUsername) allaqachon bazada bor, qayta yaratilmadi.")
         }
     }
 }
