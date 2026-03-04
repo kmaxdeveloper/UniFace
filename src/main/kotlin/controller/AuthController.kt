@@ -14,7 +14,8 @@ class AuthController(private val authService: AuthService) {
 
     @PostMapping("/login")
     fun login(@RequestBody loginRequest: LoginRequest): ResponseEntity<Any> {
-        val token = authService.authenticate(loginRequest)
-        return ResponseEntity.ok(mapOf("token" to token))
+        // Endi 'data' ichida ham token, ham role bor
+        val authData = authService.authenticate(loginRequest)
+        return ResponseEntity.ok(authData)
     }
 }
