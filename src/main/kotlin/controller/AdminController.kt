@@ -51,8 +51,12 @@ class AdminController(
         // Yangi ustoz qo'shish
         @PostMapping("/add-teacher")
         fun addTeacher(@RequestBody request: UserDto): ResponseEntity<String> {
-            userService.saveTeacher(request)
-            return ResponseEntity.ok("Ustoz muvaffaqiyatli qo'shildi!")
+            return try {
+                userService.saveTeacher(request)
+                ResponseEntity.ok("Ustoz muvaffaqiyatli qo'shildi!")
+            } catch (e: RuntimeException) {
+                ResponseEntity.badRequest().body(e.message) // 400 + "Bu login band..."
+            }
         }
 
         // Ustoz ma'lumotlarini yoki parolini o'zgartirish
