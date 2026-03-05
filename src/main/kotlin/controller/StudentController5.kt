@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/api/uniface")
+@RequestMapping("/api/v1/uniface")
 class StudentController5(private val faceService: FaceService) {
 
     @GetMapping("/setup")

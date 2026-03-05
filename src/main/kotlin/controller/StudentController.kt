@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/student")
+@RequestMapping("/api/v1/student")
 class StudentController(private val attendanceRepo: AttendanceRepository) {
 
     // Talaba o'zining hamma davomatlarini ko'rishi uchun

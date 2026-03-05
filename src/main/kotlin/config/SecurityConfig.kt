@@ -37,6 +37,7 @@ class SecurityConfig(
                     .requestMatchers("/api/v1/auth/**").permitAll()
                     .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                     .requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                    .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER") // ✅
                     .anyRequest().authenticated()
             }
             // httpBasic olib tashlandi! ❌

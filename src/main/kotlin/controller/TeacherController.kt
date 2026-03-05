@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/api/teacher")
+@RequestMapping("/api/v1/teacher")
 class TeacherController(private val faceService: FaceService) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
