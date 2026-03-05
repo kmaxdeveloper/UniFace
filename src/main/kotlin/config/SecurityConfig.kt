@@ -35,9 +35,13 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/api/v1/auth/**").permitAll()
+                    // Avval aniq endpointlar ✅
+                    .requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                    .requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                    // Keyin umumiy
                     .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                    .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                     .requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                    .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER") // ✅
                     .anyRequest().authenticated()
             }
             // httpBasic olib tashlandi! ❌
