@@ -26,7 +26,7 @@ class AttendanceService(
         val totalStudents = studentRepository.countByGroupId(groupId).toInt()
         val records = attendanceRepository.findByGroupId(groupId)
 
-        val presentCount = records.map { it.student?.id }.distinct().count()
+        val presentCount = records.map { it.student?.studentId }.distinct().count()
         val percent = if (totalStudents > 0) (presentCount * 100.0 / totalStudents) else 0.0
 
         return AttendanceStatsDto(
@@ -40,7 +40,7 @@ class AttendanceService(
     // Fan bo'yicha statistika
     fun getSubjectStats(subjectId: Long): AttendanceStatsDto {
         val records = attendanceRepository.findBySubjectId(subjectId)
-        val presentCount = records.map { it.student?.id }.distinct().count()
+        val presentCount = records.map { it.student?.studentId }.distinct().count()
 
         return AttendanceStatsDto(
             totalStudents = presentCount,
@@ -67,7 +67,7 @@ class AttendanceService(
         val start = LocalDate.now().atStartOfDay()
         val end = LocalDate.now().atTime(LocalTime.MAX)
         val records = attendanceRepository.findByDateRange(start, end)
-        val presentCount = records.map { it.student?.id }.distinct().count()
+        val presentCount = records.map { it.student?.studentId }.distinct().count()
 
         return AttendanceStatsDto(
             totalStudents = presentCount,
