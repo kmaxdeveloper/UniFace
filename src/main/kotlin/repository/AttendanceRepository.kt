@@ -12,18 +12,16 @@ import org.springframework.stereotype.Repository
 @Repository
 interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
+    // Talaba studentId bo'yicha ✅
     fun findByStudentStudentId(studentId: String): List<Attendance>
 
-    // Guruh bo'yicha davomat
+    // Guruh bo'yicha ✅
     fun findByGroupId(groupId: Long): List<Attendance>
 
-    // Fan bo'yicha davomat
+    // Fan bo'yicha ✅
     fun findBySubjectId(subjectId: Long): List<Attendance>
 
-    // Talaba bo'yicha davomat
-    fun findByStudentId(studentId: Long): List<Attendance>
-
-    // Bugun tekshirish
+    // Bugun tekshirish ✅
     @Query("""
         SELECT COUNT(a) > 0 FROM Attendance a 
         WHERE a.student = :student 
@@ -38,7 +36,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
         @Param("endOfDay") endOfDay: LocalDateTime
     ): Boolean
 
-    // Guruh + fan bo'yicha
+    // Guruh + fan bo'yicha ✅
     @Query("""
         SELECT a FROM Attendance a 
         WHERE a.group.id = :groupId 
@@ -49,7 +47,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
         @Param("subjectId") subjectId: Long
     ): List<Attendance>
 
-    // Sana oralig'ida
+    // Sana oralig'ida ✅
     @Query("""
         SELECT a FROM Attendance a 
         WHERE a.timestamp >= :start 
@@ -59,17 +57,4 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
         @Param("start") start: LocalDateTime,
         @Param("end") end: LocalDateTime
     ): List<Attendance>
-
-    // Guruh umumiy talabalar soni (davomat %)
-    @Query("""
-        SELECT COUNT(DISTINCT a.student.id) FROM Attendance a 
-        WHERE a.group.id = :groupId
-        AND a.timestamp >= :start
-        AND a.timestamp <= :end
-    """)
-    fun countDistinctStudentsByGroup(
-        @Param("groupId") groupId: Long,
-        @Param("start") start: LocalDateTime,
-        @Param("end") end: LocalDateTime
-    ): Long
 }
