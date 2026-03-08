@@ -14,18 +14,18 @@ class DataLoader(
 ) : CommandLineRunner {
     override fun run(vararg args: String?) {
         // O'zgaruvchiga olib qo'yamiz, adashmaslik uchun
-        val adminUsername = "admin_komil"
+        val adminUsername = "mainAdmin"
 
         // Tekshirish ham, saqlash ham bir xil login bilan bo'lishi shart!
         if (userRepository.findByUsername(adminUsername) == null) {
             val admin = User(
                 username = adminUsername,
-                password = passwordEncoder.encode("admin_komil2001"),
+                password = passwordEncoder.encode("mainAdmin"),
                 fullName = "Asosiy Admin",
                 role = Role.ROLE_ADMIN
             )
             userRepository.save(admin)
-            println("✅ Default Admin yaratildi: login: $adminUsername, parol: admin_komil2001")
+            println("✅ Default Admin yaratildi: login: $adminUsername, parol: admin")
         } else {
             println("ℹ️ Admin ($adminUsername) allaqachon bazada bor, qayta yaratilmadi.")
         }

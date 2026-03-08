@@ -14,7 +14,16 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
     fun findByStudentStudentId(studentId: String): List<Attendance>
 
-    // Talaba bugun aynan shu darsda (subject) bor-yo'qligini tekshirish
+    // Guruh bo'yicha davomat
+    fun findByGroupId(groupId: Long): List<Attendance>
+
+    // Fan bo'yicha davomat
+    fun findBySubjectId(subjectId: Long): List<Attendance>
+
+    // Talaba bo'yicha davomat
+    fun findByStudentId(studentId: Long): List<Attendance>
+
+    // Bugun tekshirish
     @Query("""
         SELECT COUNT(a) > 0 FROM Attendance a 
         WHERE a.student = :student 
@@ -29,4 +38,38 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
         @Param("endOfDay") endOfDay: LocalDateTime
     ): Boolean
 
+    // Guruh + fan bo'yicha
+    @Query("""
+        SELECT a FROM Attendance a 
+        WHERE a.group.id = :groupId 
+        AND a.subject.id = :subjectId
+    """)
+    fun findByGroupAndSubject(
+        @Param("groupId") groupId: Long,
+        @Param("subjectId") subjectId: Long
+    ): List<Attendance>
+
+    // Sana oralig'ida
+    @Query("""
+        SELECT a FROM Attendance a 
+        WHERE a.timestamp >= :start 
+        AND a.timestamp <= :end
+    """)
+    fun findByDateRange(
+        @Param("start") start: LocalDateTime,
+        @Param("end") end: LocalDateTime
+    ): List<Attendance>
+
+    // Guruh umumiy talabalar soni (davomat %)
+    @Query("""
+        SELECT COUNT(DISTINCT a.student.id) FROM Attendance a 
+        WHERE a.group.id = :groupId
+        AND a.timestamp >= :start
+        AND a.timestamp <= :end
+    """)
+    fun countDistinctStudentsByGroup(
+        @Param("groupId") groupId: Long,
+        @Param("start") start: LocalDateTime,
+        @Param("end") end: LocalDateTime
+    ): Long
 }

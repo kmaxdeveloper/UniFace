@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetailsService
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
@@ -23,6 +24,7 @@ class JwtAuthFilter(
     ) {
         val authHeader = request.getHeader("Authorization")
 
+        // Token yo'q yoki Bearer emas — o'tkazib yuboramiz ✅
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response)
             return
@@ -32,7 +34,14 @@ class JwtAuthFilter(
 
         if (jwtUtils.validateToken(token)) {
             val username = jwtUtils.getUsernameFromToken(token)
-            val userDetails = userDetailsService.loadUserByUsername(username)
+
+            // User topilmasa exception emas, o'tkazib yuboramiz ✅
+            val userDetails = try {
+                userDetailsService.loadUserByUsername(username)
+            } catch (e: UsernameNotFoundException) {
+                filterChain.doFilter(request, response)
+                return
+            }
 
             val authentication = UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.authorities

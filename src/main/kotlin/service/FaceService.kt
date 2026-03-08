@@ -155,43 +155,76 @@ class FaceService(
         val todayStart = LocalDate.now().atStartOfDay()
         val todayEnd = LocalDate.now().atTime(LocalTime.MAX)
 
-        // 1. AWS Rekognition orqali rasm ichidagi hamma yuzlarni qidirish
-        val sdkBytes = SdkBytes.fromByteArray(imageBytes)
-        val image = Image.builder().bytes(sdkBytes).build()
-        val searchRequest = SearchFacesByImageRequest.builder()
-            .collectionId("UniFaceCollection")
-            .image(image)
-            .faceMatchThreshold(80f)
-            .maxFaces(100)
-            .build()
-
-        val response = rekClient.searchFacesByImage(searchRequest)
         val identifiedStudents = mutableListOf<String>()
+        val alreadyMarkedStudents = mutableListOf<String>()
 
-        // 2. Topilgan har bir yuz uchun
-        response.faceMatches().forEach { match ->
-            val faceId = match.face().faceId()
-            val student = studentRepository.findByFaceId(faceId)
+        // 1. Rasmdagi HAMMA yuzlarni topamiz
+        val detectRequest = DetectFacesRequest.builder()
+            .image(Image.builder().bytes(SdkBytes.fromByteArray(imageBytes)).build())
+            .attributes(Attribute.DEFAULT)
+            .build()
+        val detectedFaces = rekClient.detectFaces(detectRequest).faceDetails()
 
-            if (student != null) {
-                // 3. Dublikatni tekshirish (bugun shu fan uchun)
-                val isAlreadyMarked = attendanceRepository.existsByStudentAndSubjectToday(
-                    student, subject, todayStart, todayEnd
-                )
+        // 2. Har bir yuzni crop qilib, collectiondan qidirамiz
+        val bufferedImage = javax.imageio.ImageIO.read(imageBytes.inputStream())
+        val imgWidth = bufferedImage.width
+        val imgHeight = bufferedImage.height
 
-                if (!isAlreadyMarked) {
-                    val attendance = Attendance(student, subject, group, teacherName)
-                    attendanceRepository.save(attendance)
-                    identifiedStudents.add(student.fullName)
+        detectedFaces.forEach { faceDetail ->
+            try {
+                val box = faceDetail.boundingBox()
+
+                // Bounding box dan crop koordinatalarini hisoblaymiz
+                val left   = (box.left() * imgWidth).toInt().coerceAtLeast(0)
+                val top    = (box.top() * imgHeight).toInt().coerceAtLeast(0)
+                val width  = (box.width() * imgWidth).toInt().coerceAtMost(imgWidth - left)
+                val height = (box.height() * imgHeight).toInt().coerceAtMost(imgHeight - top)
+
+                // Yuzni crop qilamiz
+                val croppedImage = bufferedImage.getSubimage(left, top, width, height)
+                val outputStream = java.io.ByteArrayOutputStream()
+                javax.imageio.ImageIO.write(croppedImage, "jpg", outputStream)
+                val croppedBytes = outputStream.toByteArray()
+
+                // Crop qilingan yuzni collectiondan qidirамiz
+                val searchRequest = SearchFacesByImageRequest.builder()
+                    .collectionId(collectionId)
+                    .image(Image.builder().bytes(SdkBytes.fromByteArray(croppedBytes)).build())
+                    .faceMatchThreshold(80f)
+                    .maxFaces(1)
+                    .build()
+
+                val matches = rekClient.searchFacesByImage(searchRequest).faceMatches()
+
+                if (matches.isNotEmpty()) {
+                    val faceId = matches[0].face().faceId()
+                    val student = studentRepository.findByFaceId(faceId)
+
+                    if (student != null) {
+                        val isAlreadyMarked = attendanceRepository.existsByStudentAndSubjectToday(
+                            student, subject, todayStart, todayEnd
+                        )
+                        if (!isAlreadyMarked) {
+                            attendanceRepository.save(Attendance(student, subject, group, teacherName))
+                            identifiedStudents.add("✅ ${student.fullName}")
+                        } else {
+                            alreadyMarkedStudents.add("🔄 ${student.fullName} (allaqachon belgilangan)")
+                        }
+                    }
                 }
+            } catch (e: Exception) {
+                // Bu yuz aniqlanmadi — keyingisiga o'tamiz
             }
         }
 
+        val allList = identifiedStudents + alreadyMarkedStudents
+
         return mapOf(
-            "message" to "Davomat yakunlandi",
-            "detectedCount" to response.faceMatches().size,
+            "message" to "Davomat yakunlandi. Yangi: ${identifiedStudents.size}",
+            "detectedCount" to detectedFaces.size,
             "identifiedCount" to identifiedStudents.size,
-            "list" to identifiedStudents
+            "alreadyMarkedCount" to alreadyMarkedStudents.size,
+            "list" to allList
         )
     }
 }
