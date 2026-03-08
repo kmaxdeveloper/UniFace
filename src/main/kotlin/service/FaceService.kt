@@ -165,40 +165,50 @@ class FaceService(
             .build()
         val detectedFaces = rekClient.detectFaces(detectRequest).faceDetails()
 
-        // 2. Har bir yuzni crop qilib, collectiondan qidirамiz
+        println("🔍 DetectFaces: ${detectedFaces.size} ta yuz topildi")
+
         val bufferedImage = javax.imageio.ImageIO.read(imageBytes.inputStream())
         val imgWidth = bufferedImage.width
         val imgHeight = bufferedImage.height
 
+        println("📐 Rasm o'lchami: ${imgWidth}x${imgHeight}")
+
         detectedFaces.forEach { faceDetail ->
             try {
                 val box = faceDetail.boundingBox()
+                println("📦 BoundingBox: left=${box.left()}, top=${box.top()}, w=${box.width()}, h=${box.height()}")
 
-                // Bounding box dan crop koordinatalarini hisoblaymiz
                 val left   = (box.left() * imgWidth).toInt().coerceAtLeast(0)
                 val top    = (box.top() * imgHeight).toInt().coerceAtLeast(0)
                 val width  = (box.width() * imgWidth).toInt().coerceAtMost(imgWidth - left)
                 val height = (box.height() * imgHeight).toInt().coerceAtMost(imgHeight - top)
 
-                // Yuzni crop qilamiz
+                println("✂️ Crop: left=$left, top=$top, width=$width, height=$height")
+
                 val croppedImage = bufferedImage.getSubimage(left, top, width, height)
                 val outputStream = java.io.ByteArrayOutputStream()
                 javax.imageio.ImageIO.write(croppedImage, "jpg", outputStream)
                 val croppedBytes = outputStream.toByteArray()
 
-                // Crop qilingan yuzni collectiondan qidirамiz
+                println("📸 Crop bayt hajmi: ${croppedBytes.size}")
+
                 val searchRequest = SearchFacesByImageRequest.builder()
                     .collectionId(collectionId)
                     .image(Image.builder().bytes(SdkBytes.fromByteArray(croppedBytes)).build())
-                    .faceMatchThreshold(80f)
+                    .faceMatchThreshold(70f) // ✅ pastroq threshold
                     .maxFaces(1)
                     .build()
 
                 val matches = rekClient.searchFacesByImage(searchRequest).faceMatches()
+                println("✅ Matches: ${matches.size}")
 
                 if (matches.isNotEmpty()) {
                     val faceId = matches[0].face().faceId()
+                    val similarity = matches[0].similarity()
+                    println("👤 FaceId: $faceId, Similarity: $similarity")
+
                     val student = studentRepository.findByFaceId(faceId)
+                    println("🎓 Student: ${student?.fullName ?: "topilmadi"}")
 
                     if (student != null) {
                         val isAlreadyMarked = attendanceRepository.existsByStudentAndSubjectToday(
@@ -213,7 +223,7 @@ class FaceService(
                     }
                 }
             } catch (e: Exception) {
-                // Bu yuz aniqlanmadi — keyingisiga o'tamiz
+                println("❌ Xato: ${e.message}")
             }
         }
 
