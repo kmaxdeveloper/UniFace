@@ -35,3 +35,11 @@ dependencies {
 kotlin {
     jvmToolchain(17)
 }
+
+tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
+    enabled = false // Bu modulni alohida JAR qilma degani
+}
+
+tasks.getByName<Jar>("jar") {
+    enabled = true // Shunchaki oddiy kutubxona sifatida yig'gin
+}
