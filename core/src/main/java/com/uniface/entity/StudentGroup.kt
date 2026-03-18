@@ -1,0 +1,33 @@
+package com.uniface.entity
+
+import com.uniface.entity.matrix.Faculty
+import jakarta.persistence.*
+
+@Entity
+@Table(name = "student_groups")
+class StudentGroup() {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    var id: Long = 0
+
+    @Column(nullable = false, unique = true)
+    var name: String = ""
+
+    // Matrix Solver uchun: Xona sig'imi bilan solishtirishga kerak
+    var studentCount: Int = 0
+
+    // Matrix Solver uchun: Fakultetlararo binolarni taqsimlashga kerak
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "faculty_id")
+    var faculty: Faculty? = null
+
+    // UniFace uchun: Bu guruhga tegishli talabalar
+    @OneToMany(mappedBy = "group", cascade = [CascadeType.ALL])
+    var students: MutableList<Student> = mutableListOf()
+
+    constructor(name: String = "", studentCount: Int = 0, faculty: Faculty? = null) : this() {
+        this.name = name
+        this.studentCount = studentCount
+        this.faculty = faculty
+    }
+}

@@ -11,7 +11,6 @@ import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.rekognition.RekognitionClient
 import software.amazon.awssdk.services.rekognition.model.*
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.LocalTime
 
 @Service

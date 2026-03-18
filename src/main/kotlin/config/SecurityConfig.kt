@@ -35,6 +35,10 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/api/v1/auth/**").permitAll()
+                auth.requestMatchers("/api/matrix/admin/**").hasAuthority("ROLE_ADMIN")
+
+                // 3. Matrix Public (Hamma ko'rishi mumkin bo'lgan jadval)
+                auth.requestMatchers("/api/matrix/public/**").permitAll()
                     // Avval aniq endpointlar ✅
                     .requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                     .requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")

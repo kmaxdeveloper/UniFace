@@ -25,7 +25,7 @@ class DataLoader(
                 role = Role.ROLE_ADMIN
             )
             userRepository.save(admin)
-            println("✅ Default Admin yaratildi: login: $adminUsername, parol: admin")
+            println("✅ Default Admin yaratildi: login: $adminUsername, parol: mainAdmin")
         } else {
             println("ℹ️ Admin ($adminUsername) allaqachon bazada bor, qayta yaratilmadi.")
         }

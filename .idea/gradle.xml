@@ -9,6 +9,9 @@
         <option name="modules">
           <set>
             <option value="$PROJECT_DIR$" />
+            <option value="$PROJECT_DIR$/Matrix" />
+            <option value="$PROJECT_DIR$/MizanAi" />
+            <option value="$PROJECT_DIR$/core" />
           </set>
         </option>
       </GradleProjectSettings>
