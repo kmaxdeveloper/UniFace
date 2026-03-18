@@ -15,6 +15,7 @@ class StudentGroup() {
 
     // Matrix Solver uchun: Xona sig'imi bilan solishtirishga kerak
     var studentCount: Int = 0
+    var course: Int = 1
 
     // Matrix Solver uchun: Fakultetlararo binolarni taqsimlashga kerak
     @ManyToOne(fetch = FetchType.LAZY)
