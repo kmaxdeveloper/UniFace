@@ -22,9 +22,15 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        // 1. OPTIONS so'rovini filtrdan o'tkazib yubormaslik (CORS uchun)
+        if (request.method == "OPTIONS") {
+            response.status = HttpServletResponse.SC_OK
+            return
+        }
+
         val authHeader = request.getHeader("Authorization")
 
-        // Token yo'q yoki Bearer emas — o'tkazib yuboramiz ✅
+        // 2. Bearer token borligini tekshirish
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response)
             return
@@ -32,22 +38,25 @@ class JwtAuthFilter(
 
         val token = authHeader.substring(7)
 
-        if (jwtUtils.validateToken(token)) {
-            val username = jwtUtils.getUsernameFromToken(token)
+        // 3. Token validatsiyasi va SecurityContext-ni to'ldirish
+        try {
+            if (jwtUtils.validateToken(token)) {
+                val username = jwtUtils.getUsernameFromToken(token)
 
-            // User topilmasa exception emas, o'tkazib yuboramiz ✅
-            val userDetails = try {
-                userDetailsService.loadUserByUsername(username)
-            } catch (e: UsernameNotFoundException) {
-                filterChain.doFilter(request, response)
-                return
+                // Context bo'shligini ham tekshirib qo'yish yaxshi praktika
+                if (username != null && SecurityContextHolder.getContext().authentication == null) {
+                    val userDetails = userDetailsService.loadUserByUsername(username)
+
+                    val authentication = UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.authorities
+                    )
+                    authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
+                    SecurityContextHolder.getContext().authentication = authentication
+                }
             }
-
-            val authentication = UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.authorities
-            )
-            authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
-            SecurityContextHolder.getContext().authentication = authentication
+        } catch (e: Exception) {
+            // Token xato bo'lsa context-ni tozalaymiz
+            SecurityContextHolder.clearContext()
         }
 
         filterChain.doFilter(request, response)
