@@ -17,12 +17,28 @@ class CorsConfig {
         val source = UrlBasedCorsConfigurationSource()
         val config = CorsConfiguration()
 
+        // 1. Credential-larga ruxsat (JWT va Cookie-lar uchun)
         config.allowCredentials = true
-        config.allowedOrigins = listOf("http://localhost:5173") // React porti
-        config.allowedHeaders = listOf("Origin", "Content-Type", "Accept", "Authorization")
-        config.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
 
+        // 2. Qaysi manzillardan so'rov kelsa ruxsat berish
+        config.allowedOrigins = listOf(
+            "http://localhost:5173",
+            "http://16.171.151.104",
+            "http://16.171.151.104:8081"
+        )
+
+        // 3. Hamma metodlarga ruxsat (OPTIONS, POST, GET va h.k.)
+        config.allowedMethods = listOf("*")
+
+        // 4. Hamma headerlarga ruxsat (Authorization, Content-Type va h.k.)
+        config.allowedHeaders = listOf("*")
+
+        // 5. Brauzer ko'ra oladigan headerlar
+        config.exposedHeaders = listOf("Authorization")
+
+        // 6. Hamma API yo'nalishlariga qo'llash
         source.registerCorsConfiguration("/**", config)
+
         return CorsFilter(source)
     }
 }

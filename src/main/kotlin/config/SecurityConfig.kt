@@ -16,7 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @EnableWebSecurity
 class SecurityConfig(
-    private val jwtFilter: JwtAuthFilter // JwtFilter inject qilamiz
+    private val jwtFilter: JwtAuthFilter
 ) {
 
     @Bean
@@ -28,28 +28,29 @@ class SecurityConfig(
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
-            .cors { it.disable() }
+            // BU YERDA O'ZGARISH: .disable() o'rniga shunchaki .cors { } ✅
+            .cors { }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests { auth ->
-                auth
-                    .requestMatchers("/api/v1/auth/**").permitAll()
-                auth.requestMatchers("/api/matrix/admin/**").hasAuthority("ROLE_ADMIN")
+                // OPTIONS so'rovlariga ruxsat berish (ba'zan bu ham kerak bo'ladi)
+                auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 3. Matrix Public (Hamma ko'rishi mumkin bo'lgan jadval)
+                auth.requestMatchers("/api/v1/auth/**").permitAll()
+                auth.requestMatchers("/api/matrix/admin/**").hasAuthority("ROLE_ADMIN")
                 auth.requestMatchers("/api/matrix/public/**").permitAll()
-                    // Avval aniq endpointlar ✅
-                    .requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                    .requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                    // Keyin umumiy
-                    .requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
-                    .requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                    .requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                    .anyRequest().authenticated()
+
+                auth.requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+
+                auth.requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+
+                auth.anyRequest().authenticated()
             }
-            // httpBasic olib tashlandi! ❌
-            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java) // ✅
+            .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
     }
