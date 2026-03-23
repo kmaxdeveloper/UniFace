@@ -22,15 +22,21 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        // 1. OPTIONS so'rovini filtrdan o'tkazib yubormaslik (CORS uchun)
-        if (request.method == "OPTIONS") {
+        // CORS Headerlarini har doim birinchi bo'lib qo'shamiz
+        response.setHeader("Access-Control-Allow-Origin", "http://localhost:5173")
+        response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        response.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, Accept, Origin")
+        response.setHeader("Access-Control-Allow-Credentials", "true")
+
+        // OPTIONS so'rovi kelsa, shu yerda javobni qaytaramiz
+        if ("OPTIONS".equals(request.method, ignoreCase = true)) {
             response.status = HttpServletResponse.SC_OK
             return
         }
 
         val authHeader = request.getHeader("Authorization")
 
-        // 2. Bearer token borligini tekshirish
+        // Qolgan JWT tekshirish koding...
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response)
             return
