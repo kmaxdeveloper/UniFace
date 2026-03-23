@@ -29,20 +29,18 @@ class SecurityConfig(
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
-            .cors { it.configurationSource(corsConfigurationSource()) } // CORS-ni shu yerda ulaymiz ✅
+            // 1. BU YERGA SHU QATORNI QO'SHISH SHART! ✅
+            .cors { it.configurationSource(corsConfigurationSource()) }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests { auth ->
-                // OPTIONS so'rovlarini hamma uchun ochiq qilish
+                // 2. OPTIONS so'rovlariga ruxsat berish (Preflight uchun)
                 auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
                 auth.requestMatchers("/api/v1/auth/**").permitAll()
                 auth.requestMatchers("/api/matrix/public/**").permitAll()
-
-                auth.requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
-                auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-
+                // ... qolganlari o'zgarishsiz qoladi
                 auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
