@@ -46,6 +46,10 @@ dependencies {
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
     implementation(project(":Matrix"))
     implementation(project(":core"))
+
+    implementation("com.google.zxing:core:3.5.2") // QR generatsiya
+    implementation("com.google.zxing:javase:3.5.2")
+    implementation("org.springframework.boot:spring-boot-starter-websocket")
 }
 
 tasks.test {

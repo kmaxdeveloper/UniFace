@@ -2,12 +2,11 @@ package com.uniface.service
 
 import com.uniface.dto.AttendanceRecordDto
 import com.uniface.dto.AttendanceStatsDto
-import com.uniface.repository.AttendanceRepository
-import com.uniface.repository.StudentRepository
-import com.uniface.repository.StudentGroupRepository
-import com.uniface.repository.SubjectRepository
+import com.uniface.entity.Attendance
+import com.uniface.repository.*
 import org.springframework.stereotype.Service
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -20,7 +19,41 @@ class AttendanceService(
 ) {
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
-    // Guruh bo'yicha statistika
+    fun markAttendance(studentId: String, lessonId: Long): AttendanceRecordDto {
+        val student = studentRepository.findByStudentId(studentId)
+            ?: throw Exception("Talaba topilmadi")
+
+        val subject = subjectRepository.findById(lessonId)
+            .orElseThrow { Exception("Dars topilmadi") }
+
+        // Entity yaratish (Sening konstruktoring bo'yicha)
+        val newAttendance = Attendance(
+            student = student,
+            subject = subject,
+            group = student.group ?: throw Exception("Guruhsiz talaba"),
+            teacherName = subject.name ?: "Ustoz" // Fan nomi yoki o'qituvchi ismi
+        ).apply {
+            this.timestamp = LocalDateTime.now()
+            this.status = "PRESENT"
+        }
+
+        return attendanceRepository.save(newAttendance).toDto()
+    }
+
+    private fun Attendance.toDto() = AttendanceRecordDto(
+        studentId = student?.studentId ?: "",
+        studentName = student?.fullName ?: "",
+        subjectName = subject?.name ?: "",
+        groupName = group?.name ?: "",
+        timestamp = timestamp.format(formatter),
+        status = status
+    )
+
+    // Joylashuvni tekshirish (Aytganingdek, vaqtincha bypass/true)
+    fun checkLocation(lat: Double, lng: Double): Boolean = true
+
+    // --- MAVJUD STATISTIKA METODLARI ---
+
     fun getGroupStats(groupId: Long): AttendanceStatsDto {
         val group = groupRepository.findById(groupId).orElseThrow { Exception("Guruh topilmadi") }
         val totalStudents = studentRepository.countByGroupId(groupId).toInt()
@@ -37,7 +70,6 @@ class AttendanceService(
         )
     }
 
-    // Fan bo'yicha statistika
     fun getSubjectStats(subjectId: Long): AttendanceStatsDto {
         val records = attendanceRepository.findBySubjectId(subjectId)
         val presentCount = records.map { it.student?.studentId }.distinct().count()
@@ -50,10 +82,8 @@ class AttendanceService(
         )
     }
 
-    // Talaba bo'yicha o'z davomati
     fun getStudentAttendance(studentId: String): AttendanceStatsDto {
         val records = attendanceRepository.findByStudentStudentId(studentId)
-
         return AttendanceStatsDto(
             totalStudents = 1,
             presentCount = records.size,
@@ -62,7 +92,6 @@ class AttendanceService(
         )
     }
 
-    // Bugungi davomat
     fun getTodayStats(): AttendanceStatsDto {
         val start = LocalDate.now().atStartOfDay()
         val end = LocalDate.now().atTime(LocalTime.MAX)
@@ -76,14 +105,4 @@ class AttendanceService(
             records = records.map { it.toDto() }
         )
     }
-
-    // Extension function
-    private fun com.uniface.entity.Attendance.toDto() = AttendanceRecordDto(
-        studentId = student?.studentId ?: "",
-        studentName = student?.fullName ?: "",
-        subjectName = subject?.name ?: "",
-        groupName = group?.name ?: "",
-        timestamp = timestamp.format(formatter),
-        status = status
-    )
 }

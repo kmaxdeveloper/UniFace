@@ -39,8 +39,15 @@ class SecurityConfig(
                 auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
                 auth.requestMatchers("/api/v1/auth/**").permitAll()
-                auth.requestMatchers("/api/matrix/public/**").permitAll()
-                // ... qolganlari o'zgarishsiz qoladi
+                    // Avval aniq endpointlar ✅
+                auth.requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                    // Keyin umumiy
+                auth.requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
+                auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/teacher/generate-qr/").hasAuthority("ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/student/scan").permitAll()
                 auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
