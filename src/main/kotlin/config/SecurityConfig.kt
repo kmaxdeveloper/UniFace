@@ -29,33 +29,26 @@ class SecurityConfig(
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
             .csrf { it.disable() }
+            // 1. BU YERGA SHU QATORNI QO'SHISH SHART! ✅
             .cors { it.configurationSource(corsConfigurationSource()) }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests { auth ->
-                // 1. Preflight so'rovlar har doim ochiq bo'lishi shart
+                // 2. OPTIONS so'rovlariga ruxsat berish (Preflight uchun)
                 auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
 
-                // 2. To'liq ochiq endpointlar
-                auth.requestMatchers(
-                    "/api/v1/auth/**",
-                    "/ws-attendance/**",
-                    "/api/v1/student/scan/**"
-                ).permitAll()
-
-                // 3. TEACHER va ADMIN kirishi mumkin bo'lgan MAXSUS endpointlar (Bular ADMIN/** dan tepada turishi shart!)
-                auth.requestMatchers(
-                    "/api/v1/admin/groups/**",
-                    "/api/v1/admin/subjects/**",
-                    "/api/v1/teacher/**",
-                    "/api/v1/face/**"
-                ).hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-
-                // 4. FAQAT ADMIN uchun qolgan barcha admin yo'llari
+                auth.requestMatchers("/api/v1/auth/**").permitAll()
+                // Avval aniq endpointlar ✅
+                auth.requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                // Keyin umumiy
                 auth.requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
-
-                // 5. Qolgan hamma so'rovlar login talab qiladi
+                auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/student/scan/**").permitAll()
+                auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
+                auth.requestMatchers("/ws-attendance/**").permitAll()
                 auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
@@ -66,20 +59,12 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-
-        // AWS'da localhost ishlamaydi, shuning uchun pattern ishlatamiz
-        configuration.allowedOriginPatterns = listOf(
-            "http://localhost:5173",
-            "http://*.timora.uz",
-            "https://*.timora.uz",
-            "http://api.timora.uz:8081"
-        )
-
+        // MUHIM: Faqat sening React portingga ruxsat
+        configuration.allowedOrigins = listOf("http://localhost:5173")
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        // Headers bo'limida '*' ishlatish xavfsizroq (Custom headerlar uchun)
-        configuration.allowedHeaders = listOf("*")
+        configuration.allowedHeaders = listOf("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin")
         configuration.allowCredentials = true
-        configuration.maxAge = 3600L
+        configuration.maxAge = 3600L // Brauzer keshlab olishi uchun
 
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", configuration)
