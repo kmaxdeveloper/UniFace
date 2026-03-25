@@ -3,6 +3,7 @@ package com.uniface.config
 import com.uniface.security.JwtAuthFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -28,29 +29,35 @@ class SecurityConfig(
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http
-            .csrf { it.disable() }
-            // 1. BU YERGA SHU QATORNI QO'SHISH SHART! ✅
+            // 1. CORS har doim birinchi bo'lishi shart!
             .cors { it.configurationSource(corsConfigurationSource()) }
+            .csrf { it.disable() }
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
             .authorizeHttpRequests { auth ->
-                // 2. OPTIONS so'rovlariga ruxsat berish (Preflight uchun)
-                auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                auth.requestMatchers("/ws-attendance/**").permitAll()
-                auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
+                // OPTIONS (Preflight) so'rovlarini hammasiga ruxsat
+                auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                // WebSocket va SockJS /info so'rovlari uchun yo'lni ochamiz
+                auth.requestMatchers("/ws-attendance/**").permitAll()
+
+                // Auth va ochiq endpointlar
                 auth.requestMatchers("/api/v1/auth/**").permitAll()
-                // Avval aniq endpointlar ✅
+                auth.requestMatchers("/api/v1/student/scan/**").permitAll()
+
+                // Qolgan rollar bo'yicha cheklovlar
+                auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
                 auth.requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                // Keyin umumiy
                 auth.requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                 auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                auth.requestMatchers("/api/v1/student/scan/**").permitAll()
+
                 auth.anyRequest().authenticated()
             }
+            // 2. JWT filtri WebSocket yo'llariga xalaqit bermasligi kerak
+            // (JwtAuthFilter ichida path.startsWith("/ws-attendance") tekshiruvi bo'lishi shart)
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
 
         return http.build()
@@ -59,14 +66,25 @@ class SecurityConfig(
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        // MUHIM: Faqat sening React portingga ruxsat
-        configuration.allowedOrigins = listOf("http://localhost:5173")
+
+        // MUHIM: SockJS bilan localhost va domendan ulanishda patterns ishonchliroq
+        configuration.allowedOriginPatterns = listOf(
+            "http://localhost:5173",
+            "http://api.timora.uz*",
+            "http://timora.uz*"
+        )
+
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        configuration.allowedHeaders = listOf("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin")
+
+        // Hamma kerakli headerlarga ruxsat beramiz
+        configuration.allowedHeaders = listOf("*")
+
+        // SockJS session/cookie ishlashi uchun true bo'lishi shart
         configuration.allowCredentials = true
-        configuration.maxAge = 3600L // Brauzer keshlab olishi uchun
+        configuration.maxAge = 3600L
 
         val source = UrlBasedCorsConfigurationSource()
+        // Hamma endpointlar uchun ushbu CORS sozlansin
         source.registerCorsConfiguration("/**", configuration)
         return source
     }
