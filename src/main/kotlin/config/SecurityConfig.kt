@@ -37,6 +37,8 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 // 2. OPTIONS so'rovlariga ruxsat berish (Preflight uchun)
                 auth.requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                auth.requestMatchers("/ws-attendance/**").permitAll()
+                auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
 
                 auth.requestMatchers("/api/v1/auth/**").permitAll()
                 // Avval aniq endpointlar ✅
@@ -47,8 +49,6 @@ class SecurityConfig(
                 auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/student/scan/**").permitAll()
-                auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
-                auth.requestMatchers("/ws-attendance/**").permitAll()
                 auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
