@@ -8,20 +8,21 @@ import java.util.*
 
 @Service
 class QrService {
-    // 32 belgidan kam bo'lmagan maxfiy kalit
-    private val secretKey = Keys.hmacShaKeyFor("Uniface_TATU_Neura_QR_Attendance_Key_2026".toByteArray())
+    // Kalitni string ko'rinishida saqlash ishonchliroq
+    private val secretString = "Uniface_TATU_Neura_QR_Attendance_Key_2026_Secure_Long_Key"
+    private val secretKey = Keys.hmacShaKeyFor(secretString.toByteArray())
 
-    // O'qituvchi uchun token generatsiya qilish
     fun generateQrToken(lessonId: Long): String {
+        val now = System.currentTimeMillis()
         return Jwts.builder()
             .setSubject(lessonId.toString())
-            .setIssuedAt(Date())
-            .setExpiration(Date(System.currentTimeMillis() + 10000)) // 10 soniya (8s + 2s tarmoq uchun)
+            .setIssuedAt(Date(now))
+            // Muddatni 30 soniya qilamiz - tarmoq kechikishlari va skanerlash vaqti uchun
+            .setExpiration(Date(now + 30000))
             .signWith(secretKey, SignatureAlgorithm.HS256)
             .compact()
     }
 
-    // Talaba yuborgan tokendan lessonId ni sug'urib olish
     fun getLessonIdFromToken(token: String): Long? {
         return try {
             val claims = Jwts.parserBuilder()
@@ -29,9 +30,12 @@ class QrService {
                 .build()
                 .parseClaimsJws(token)
 
+            // Qo'shimcha tekshiruv: Token muddati o'tgan bo'lsa parser o'zi Exception otadi
             claims.body.subject.toLong()
         } catch (e: Exception) {
-            null // Muddati o'tgan yoki soxta token
+            // Log yozish foydali: masalan ExpiredJwtException yoki SignatureException
+            println("QR Token Error: ${e.message}")
+            null
         }
     }
 }

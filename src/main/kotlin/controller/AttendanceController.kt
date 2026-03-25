@@ -15,12 +15,12 @@ class AttendanceController(
     private val messagingTemplate: SimpMessagingTemplate
 ) {
 
-    @GetMapping("teacher/generate-qr/{lessonId}")
+    @GetMapping("/teacher/generate-qr/{lessonId}")
     fun getQr(@PathVariable lessonId: Long) =
         ResponseEntity.ok(mapOf("qrToken" to qrService.generateQrToken(lessonId)))
 
     // 2. TALABA UCHUN: Skaner qilganda yuboriladigan API
-    @PostMapping("student/scan")
+    @PostMapping("/student/scan")
     fun scan(@RequestBody request: ScanRequest): ResponseEntity<Any> {
         // Tokendan lessonId ni olamiz (vaqtini ham tekshiradi)
         val lessonId = qrService.getLessonIdFromToken(request.qrToken)
