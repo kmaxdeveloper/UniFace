@@ -15,7 +15,6 @@ class AttendanceController(
     private val messagingTemplate: SimpMessagingTemplate
 ) {
 
-
     @GetMapping("teacher/generate-qr/{lessonId}")
     fun getQr(@PathVariable lessonId: Long) =
         ResponseEntity.ok(mapOf("qrToken" to qrService.generateQrToken(lessonId)))

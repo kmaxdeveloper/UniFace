@@ -46,8 +46,10 @@ class SecurityConfig(
                 auth.requestMatchers("/api/v1/admin/**").hasAuthority("ROLE_ADMIN")
                 auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
-                auth.requestMatchers("/api/v1/teacher/generate-qr/").hasAuthority("ROLE_TEACHER")
+                auth.requestMatchers("/api/v1/student/scan/**").permitAll()
                 auth.requestMatchers("/api/v1/student/scan").permitAll()
+                auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
+                auth.requestMatchers("/ws-attendance/**").permitAll()
                 auth.anyRequest().authenticated()
             }
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
