@@ -7,8 +7,10 @@ import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
 import jakarta.persistence.ManyToOne
+import jakarta.persistence.Table
 
-@Entity
+@Entity(name = "MatrixLesson") // Hibernate uchun nomini o'zgartirdik
+@Table(name = "matrix_lessons")
 data class Lesson(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long = 0,
