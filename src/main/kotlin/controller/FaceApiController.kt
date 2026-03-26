@@ -23,16 +23,21 @@ class FaceApiController(private val faceService: FaceService) {
     @PostMapping("/verify")
     fun verify(
         @RequestParam("file") file: MultipartFile,
-        @RequestParam("subjectId") subjectId: Long,      // Qo'shildi
-        @RequestParam("groupId") groupId: Long,          // Qo'shildi
-        @RequestParam("teacherName") teacherName: String // Qo'shildi
+        @RequestParam("subjectId") subjectId: Long,
+        @RequestParam("groupId") groupId: Long,
+        @RequestParam("teacherId") teacherId: Long // Ism o'rniga ID kutamiz
     ): FaceResponse {
-        // Endi hamma argumentlarni service'ga uzatamiz
+        // 1. Fayl bo'sh emasligini tekshirish (Safety first!)
+        if (file.isEmpty) {
+            return FaceResponse(false, "Rasm yuklanmagan!")
+        }
+
+        // 2. Service'ga hamma argumentlarni uzatamiz
         return faceService.identifyStudent(
-            file.bytes,
-            subjectId,
-            groupId,
-            teacherName
+            imageBytes = file.bytes,
+            subjectId = subjectId,
+            groupId = groupId,
+            teacherId = teacherId
         )
     }
 }

@@ -22,14 +22,25 @@ class Attendance() {
     @JoinColumn(name = "group_id", nullable = false)
     var group: StudentGroup? = null
 
-    var teacherName: String = ""
+    // String o'rniga Teacher entity-sini bog'laymiz (identifikatsiya uchun)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "teacher_id", nullable = false)
+    var teacher: Teacher? = null
+
     var timestamp: LocalDateTime = LocalDateTime.now()
+
+    // Statusni Enum qilishni maslahat beraman (PRESENT, ABSENT, LATE)
     var status: String = "PRESENT"
 
-    constructor(student: Student, subject: Subject, group: StudentGroup, teacherName: String) : this() {
+    constructor(
+        student: Student,
+        subject: Subject,
+        group: StudentGroup,
+        teacher: Teacher
+    ) : this() {
         this.student = student
         this.subject = subject
         this.group = group
-        this.teacherName = teacherName
+        this.teacher = teacher
     }
 }

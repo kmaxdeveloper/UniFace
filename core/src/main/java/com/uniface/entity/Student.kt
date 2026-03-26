@@ -14,14 +14,19 @@ class Student() {
     @Column(unique = true)
     var faceId: String = ""
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id") // Login tizimi bilan ulanish
+    var user: User? = null
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     var group: StudentGroup? = null
 
-    constructor(studentId: String, fullName: String, faceId: String, group: StudentGroup?) : this() {
+    constructor(studentId: String, fullName: String, faceId: String, group: StudentGroup?, user: User?) : this() {
         this.studentId = studentId
         this.fullName = fullName
         this.faceId = faceId
         this.group = group
+        this.user = user
     }
 }

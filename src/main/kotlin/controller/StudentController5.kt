@@ -20,18 +20,24 @@ class StudentController5(private val faceService: FaceService) {
         @RequestParam("image") file: MultipartFile,
         @RequestParam("subjectId") subjectId: Long,
         @RequestParam("groupId") groupId: Long,
-        @RequestParam("teacherName") teacherName: String
+        @RequestParam("teacherId") teacherId: Long // String o'rniga Long ID
     ): ResponseEntity<Any> {
         return try {
+            // Fayl borligini tekshiramiz
+            if (file.isEmpty) {
+                return ResponseEntity.badRequest().body(mapOf("error" to "Rasm yuklanmagan!"))
+            }
+
             val result = faceService.processBulkAttendance(
                 imageBytes = file.bytes,
                 subjectId = subjectId,
                 groupId = groupId,
-                teacherName = teacherName
+                teacherId = teacherId // Service'ga ID ketyapti
             )
             ResponseEntity.ok(result)
         } catch (e: Exception) {
-            ResponseEntity.badRequest().body(mapOf("error" to e.message))
+            // Xatolikni chiroyli ko'rsatamiz
+            ResponseEntity.status(500).body(mapOf("error" to (e.message ?: "Noma'lum xatolik")))
         }
     }
 

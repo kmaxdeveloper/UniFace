@@ -1,11 +1,17 @@
 package com.uniface.service
 
+import com.uniface.data.Role
 import com.uniface.dto.FaceResponse
 import com.uniface.entity.Attendance
+import com.uniface.entity.User
 import com.uniface.repository.AttendanceRepository
 import com.uniface.repository.StudentGroupRepository
 import com.uniface.repository.StudentRepository
 import com.uniface.repository.SubjectRepository
+import com.uniface.repository.TeacherRepository
+import com.uniface.repository.UserRepository
+import jakarta.transaction.Transactional
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.core.SdkBytes
 import software.amazon.awssdk.services.rekognition.RekognitionClient
@@ -19,50 +25,63 @@ class FaceService(
     private val studentRepository: StudentRepository,   // Baza bilan ishlash uchun
     private val attendanceRepository: AttendanceRepository, // Davomatni saqlash uchun
     private val subjectRepository: SubjectRepository,
-    private val groupRepository: StudentGroupRepository
+    private val groupRepository: StudentGroupRepository,
+    private val passwordEncoder: PasswordEncoder,
+    private val teacherRepository: TeacherRepository,
+    private val userRepository: UserRepository
 ) {
     private val collectionId = "UniFaceCollection"
 
     // Talabani ro'yxatga olish (AWS + Local DB)
+    @Transactional // ✅ Agar biror joyda xato bo'lsa, hatto User ham bazaga kirmaydi
     fun registerFace(
         studentId: String,
         fullName: String,
-        groupId: Long, // Endi String emas, Long ID kelyapti
+        groupId: Long,
         imageBytes: ByteArray
     ): FaceResponse {
-        return try {
-            // 1. Bazadan guruhni qidiramiz
-            val group = groupRepository.findById(groupId).orElse(null)
-                ?: return FaceResponse(false, "Xatolik: ID=$groupId bo'lgan guruh topilmadi")
+        // 1. Guruhni tekshirish (Erta xatolikni ushlash)
+        val group = groupRepository.findById(groupId).orElseThrow {
+            IllegalArgumentException("Guruh topilmadi: ID=$groupId")
+        }
+        if (userRepository.existsByUsername(studentId)) {
+            throw IllegalArgumentException("Bu ID bilan talaba allaqachon ro'yxatdan o'tgan!")
+        }
 
-            // 2. AWS Rekognition'ga yuzni yuboramiz
-            val request = IndexFacesRequest.builder()
-                .collectionId(collectionId)
-                .externalImageId(studentId)
-                .image(Image.builder().bytes(SdkBytes.fromByteArray(imageBytes)).build())
-                .build()
+        // 2. User yaratish (studentId ni username sifatida ishlatish - tavsiyamiz)
+        val newUser = User().apply {
+            this.username = studentId
+            this.password = passwordEncoder.encode("12345") // "12345" shifrlanadi
+            this.role = Role.ROLE_STUDENT
+        }
+        val savedUser = userRepository.save(newUser)
 
-            val response = rekClient.indexFaces(request)
+        // 3. AWS Rekognition Indexing
+        val request = IndexFacesRequest.builder()
+            .collectionId(collectionId)
+            .externalImageId(studentId)
+            .image(Image.builder().bytes(SdkBytes.fromByteArray(imageBytes)).build())
+            .build()
 
-            if (response.faceRecords().isNotEmpty()) {
-                val awsFaceId = response.faceRecords()[0].face().faceId()
+        val response = rekClient.indexFaces(request)
 
-                // 3. Bazaga yangi talabani saqlaymiz (Obyekt ko'rinishida)
-                val newStudent = com.uniface.entity.Student().apply {
-                    this.studentId = studentId
-                    this.fullName = fullName
-                    this.faceId = awsFaceId
-                    this.group = group // Topilgan guruh obyektini beramiz
-                }
+        // 4. Tekshirish va Saqlash
+        if (response.faceRecords().isNotEmpty()) {
+            val awsFaceId = response.faceRecords()[0].face().faceId()
 
-                studentRepository.save(newStudent)
-
-                FaceResponse(true, "Talaba muvaffaqiyatli saqlandi: $fullName", studentId)
-            } else {
-                FaceResponse(false, "Rasmdan yuz topilmadi. Iltimos, tiniqroq rasm yuklang.")
+            val newStudent = com.uniface.entity.Student().apply {
+                this.studentId = studentId
+                this.fullName = fullName
+                this.faceId = awsFaceId
+                this.group = group
+                this.user = savedUser
             }
-        } catch (e: Exception) {
-            FaceResponse(false, "Xatolik yuz berdi: ${e.message}")
+
+            studentRepository.save(newStudent)
+            return FaceResponse(true, "Talaba muvaffaqiyatli saqlandi", studentId)
+        } else {
+            // 🚨 MUHIM: Bu xato Spring'ga yetib borishi kerak, shunda Rollback ishlaydi!
+            throw RuntimeException("Rasmdan yuz topilmadi. Tranzaksiya bekor qilindi.")
         }
     }
 
@@ -71,7 +90,7 @@ class FaceService(
         imageBytes: ByteArray,
         subjectId: Long,
         groupId: Long,
-        teacherName: String
+        teacherId: Long
     ): FaceResponse {
         return try {
             // 1. Bazadan fan va guruhni tekshirib olamiz
@@ -79,6 +98,8 @@ class FaceService(
                 ?: return FaceResponse(false, "Fan topilmadi")
             val group = groupRepository.findById(groupId).orElse(null)
                 ?: return FaceResponse(false, "Guruh topilmadi")
+            val teacher = teacherRepository.findById(teacherId).orElse(null)
+                ?: return FaceResponse(false, "O'qituvchi topilmadi")
 
             val request = SearchFacesByImageRequest.builder()
                 .collectionId(collectionId)
@@ -112,7 +133,7 @@ class FaceService(
                             this.student = student
                             this.subject = subject
                             this.group = group
-                            this.teacherName = teacherName
+                            this.teacher = teacher
                         }
                         attendanceRepository.save(attendance)
                         FaceResponse(true, "Xush kelibsiz, ${student.fullName}!", student.studentId, similarity)
@@ -146,10 +167,11 @@ class FaceService(
         imageBytes: ByteArray,
         subjectId: Long,
         groupId: Long,
-        teacherName: String
+        teacherId: Long
     ): Map<String, Any> {
         val subject = subjectRepository.findById(subjectId).orElseThrow { Exception("Fan topilmadi") }
         val group = groupRepository.findById(groupId).orElseThrow { Exception("Guruh topilmadi") }
+        val teacher = teacherRepository.findById(teacherId).orElseThrow { Exception("O'qituvchi topilmadi") }
 
         val todayStart = LocalDate.now().atStartOfDay()
         val todayEnd = LocalDate.now().atTime(LocalTime.MAX)
@@ -214,7 +236,8 @@ class FaceService(
                             student, subject, todayStart, todayEnd
                         )
                         if (!isAlreadyMarked) {
-                            attendanceRepository.save(Attendance(student, subject, group, teacherName))
+
+                            attendanceRepository.save(Attendance(student, subject, group, teacher))
                             identifiedStudents.add("✅ ${student.fullName}")
                         } else {
                             alreadyMarkedStudents.add("🔄 ${student.fullName} (allaqachon belgilangan)")
@@ -235,5 +258,32 @@ class FaceService(
             "alreadyMarkedCount" to alreadyMarkedStudents.size,
             "list" to allList
         )
+    }
+
+    @Transactional
+    fun deleteStudent(studentId: String): String {
+        return try {
+            val student = studentRepository.findById(studentId).orElseThrow {
+                Exception("Talaba topilmadi")
+            }
+
+            // 1. AWS dan yuzni o'chiramiz
+            val deleteRequest = DeleteFacesRequest.builder()
+                .collectionId(collectionId)
+                .faceIds(student.faceId)
+                .build()
+            rekClient.deleteFaces(deleteRequest)
+
+            // 2. Bazadan Studentni o'chiramiz
+            val userId = student.user?.id
+            studentRepository.delete(student)
+
+            // 3. Bog'langan User (Login)ni ham o'chiramiz
+            userId?.let { userRepository.deleteById(it) }
+
+            "Talaba va uning barcha ma'lumotlari o'chirildi"
+        } catch (e: Exception) {
+            throw RuntimeException("O'chirishda xatolik: ${e.message}")
+        }
     }
 }

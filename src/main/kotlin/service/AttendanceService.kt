@@ -15,28 +15,40 @@ class AttendanceService(
     private val attendanceRepository: AttendanceRepository,
     private val studentRepository: StudentRepository,
     private val groupRepository: StudentGroupRepository,
-    private val subjectRepository: SubjectRepository
+    private val subjectRepository: SubjectRepository,
+    private val lessonRepository: LessonRepository
 ) {
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
     fun markAttendance(studentId: String, lessonId: Long): AttendanceRecordDto {
+        // 1. Talabani bazadan qidiramiz
         val student = studentRepository.findByStudentId(studentId)
             ?: throw Exception("Talaba topilmadi")
 
-        val subject = subjectRepository.findById(lessonId)
-            .orElseThrow { Exception("Dars topilmadi") }
+        // 2. Dars seansini topamiz (Lesson ichida hamma narsa bor)
+        val lesson = lessonRepository.findById(lessonId)
+            .orElseThrow { Exception("Dars seansi topilmadi") }
 
-        // Entity yaratish (Sening konstruktoring bo'yicha)
+        // 3. Dublikatni tekshirish (Bir kunda bir marta darsga kirish uchun)
+        val startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay()
+        val endOfDay = LocalDateTime.now().toLocalDate().atTime(java.time.LocalTime.MAX)
+
+        if (attendanceRepository.existsByStudentAndSubjectToday(student, lesson.subject, startOfDay, endOfDay)) {
+            throw Exception("Siz bugun bu fandan davomatdan o'tgansiz!")
+        }
+
+        // 4. YANGI ATTENDANCE YARATISH (Sening konstruktoringga mos)
         val newAttendance = Attendance(
             student = student,
-            subject = subject,
-            group = student.group ?: throw Exception("Guruhsiz talaba"),
-            teacherName = subject.name ?: "Ustoz" // Fan nomi yoki o'qituvchi ismi
+            subject = lesson.subject,
+            group = lesson.group,
+            teacher = lesson.teacher // String emas, Teacher obyektini o'zini beramiz!
         ).apply {
             this.timestamp = LocalDateTime.now()
             this.status = "PRESENT"
         }
 
+        // 5. Saqlash va DTO ga o'girib qaytarish
         return attendanceRepository.save(newAttendance).toDto()
     }
 
