@@ -1,5 +1,6 @@
 package com.uniface.entity
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.uniface.entity.matrix.Faculty
 import jakarta.persistence.*
 
@@ -23,6 +24,7 @@ class StudentGroup() {
     var faculty: Faculty? = null
 
     // UniFace uchun: Bu guruhga tegishli talabalar
+    @JsonIgnore
     @OneToMany(mappedBy = "group", cascade = [CascadeType.ALL])
     var students: MutableList<Student> = mutableListOf()
 
