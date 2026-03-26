@@ -6,7 +6,7 @@ import com.uniface.entity.StudentGroup
 import com.uniface.entity.Subject
 import com.uniface.repository.StudentGroupRepository
 import com.uniface.repository.SubjectRepository
-import com.uniface.repository.matrix.LessonRepository // Repo import qo'shildi
+import com.uniface.repository.matrix.MatrixLessonRepository // Repo import qo'shildi
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
@@ -15,7 +15,7 @@ class ImportService(
     private val roomService: RoomEntryService,
     private val subjectRepo: SubjectRepository,
     private val groupRepo: StudentGroupRepository,
-    private val lessonRepo: LessonRepository // 1. Bu yerga inject qildik ✅
+    private val lessonRepo: MatrixLessonRepository // 1. Bu yerga inject qildik ✅
 ) {
     @Transactional
     fun importEverything(data: UniversityDataImport) {

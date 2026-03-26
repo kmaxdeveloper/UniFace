@@ -3,7 +3,7 @@ package com.uniface.matrix.service
 import com.uniface.matrix.domain.Timetable
 import com.uniface.matrix.solver.MatrixConstraintProvider
 import com.uniface.entity.matrix.Lesson
-import com.uniface.repository.matrix.LessonRepository   // Unifacedan import ✅
+import com.uniface.repository.matrix.MatrixLessonRepository   // Unifacedan import ✅
 import com.uniface.repository.matrix.RoomRepository     // Unifacedan import ✅
 import com.uniface.repository.matrix.TimeslotRepository // Unifacedan import ✅
 import ai.timefold.solver.core.api.solver.SolverFactory
@@ -14,7 +14,7 @@ import java.time.Duration
 
 @Service
 class MatrixService(
-    private val lessonRepository: LessonRepository,
+    private val matrixLessonRepository: MatrixLessonRepository,
     private val roomRepository: RoomRepository,
     private val timeslotRepository: TimeslotRepository
 ) {
@@ -24,13 +24,13 @@ class MatrixService(
         val problem = Timetable(
             timeslots = timeslotRepository.findAll(),
             rooms = roomRepository.findAll(),
-            lessons = lessonRepository.findAll()
+            lessons = matrixLessonRepository.findAll()
         )
 
         val solution = solve(problem)
 
         // Hisoblangan natijani bazaga saqlaymiz
-        lessonRepository.saveAll(solution.lessons)
+        matrixLessonRepository.saveAll(solution.lessons)
 
         return solution
     }
