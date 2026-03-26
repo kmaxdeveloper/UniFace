@@ -1,5 +1,6 @@
 package com.uniface.entity
 
+import com.fasterxml.jackson.annotation.JsonBackReference
 import jakarta.persistence.*
 
 @Entity
@@ -13,6 +14,7 @@ class Teacher(
 
     @OneToOne
     @JoinColumn(name = "user_id") // User jadvali bilan ulaymiz
+    @JsonBackReference
     var user: User? = null,
 
     var department: String = "",
@@ -27,6 +29,7 @@ class Teacher(
     var subjects: MutableSet<Subject> = mutableSetOf(),
 
     // Ustozga biriktirilgan guruhlar (Many-to-Many)
+
     @ManyToMany
     @JoinTable(
         name = "teacher_groups",

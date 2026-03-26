@@ -24,7 +24,6 @@ class StudentGroup() {
     var faculty: Faculty? = null
 
     // UniFace uchun: Bu guruhga tegishli talabalar
-    @JsonIgnore
     @OneToMany(mappedBy = "group", cascade = [CascadeType.ALL])
     var students: MutableList<Student> = mutableListOf()
 

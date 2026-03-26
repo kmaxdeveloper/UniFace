@@ -1,5 +1,6 @@
 package com.uniface.entity
 
+import com.fasterxml.jackson.annotation.JsonBackReference
 import jakarta.persistence.*
 
 @Entity
@@ -16,6 +17,7 @@ class Student() {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id") // Login tizimi bilan ulanish
+    @JsonBackReference
     var user: User? = null
 
     @ManyToOne(fetch = FetchType.LAZY)

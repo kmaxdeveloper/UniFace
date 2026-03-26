@@ -1,5 +1,6 @@
 package com.uniface.entity
 
+import com.fasterxml.jackson.annotation.JsonManagedReference
 import com.uniface.data.Role
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
@@ -29,8 +30,10 @@ class User(
     var role: Role = Role.ROLE_STUDENT,
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
+    @JsonManagedReference
     var teacherProfile: Teacher? = null,
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL])
+    @JsonManagedReference
     var studentProfile: Student? = null
 )
