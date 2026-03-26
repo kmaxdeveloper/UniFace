@@ -1,12 +1,14 @@
 package com.uniface.service.matrix
 
 import com.uniface.dto.matrix.UniversityDataImport
-import com.uniface.entity.matrix.Lesson // Import qo'shildi
+import com.uniface.entity.Lesson
 import com.uniface.entity.StudentGroup
 import com.uniface.entity.Subject
+import com.uniface.entity.Teacher
+import com.uniface.repository.LessonRepository
 import com.uniface.repository.StudentGroupRepository
 import com.uniface.repository.SubjectRepository
-import com.uniface.repository.matrix.MatrixLessonRepository // Repo import qo'shildi
+import com.uniface.repository.TeacherRepository
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
@@ -15,7 +17,8 @@ class ImportService(
     private val roomService: RoomEntryService,
     private val subjectRepo: SubjectRepository,
     private val groupRepo: StudentGroupRepository,
-    private val lessonRepo: MatrixLessonRepository // 1. Bu yerga inject qildik ✅
+    private val teacherRepo: TeacherRepository, // 1. TeacherRepo qo'shdik
+    private val lessonRepo: LessonRepository
 ) {
     @Transactional
     fun importEverything(data: UniversityDataImport) {
@@ -52,13 +55,14 @@ class ImportService(
         data.lessons.forEach { lDto ->
             val group = groupRepo.findByName(lDto.groupName)
             val subject = subjectRepo.findByCode(lDto.subjectCode)
+            val teacher = teacherRepo.findByUserId(lDto.teacherName.toLong())
 
             if (group != null && subject != null) {
                 // Lesson obyektini aniq tipda yarating
                 val newLesson = Lesson(
                     subject = subject,
-                    teacherName = lDto.teacherName,
-                    studentGroup = group
+                    teacher = teacher,
+                    group = group
                 )
                 lessonRepo.save(newLesson) // Endi "S" parametrini aniqlay oladi ✅
             }

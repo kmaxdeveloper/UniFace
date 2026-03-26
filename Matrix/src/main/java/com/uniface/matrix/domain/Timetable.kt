@@ -6,9 +6,9 @@ import ai.timefold.solver.core.api.domain.solution.PlanningSolution
 import ai.timefold.solver.core.api.domain.solution.ProblemFactCollectionProperty
 import ai.timefold.solver.core.api.domain.valuerange.ValueRangeProvider
 import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
+import com.uniface.entity.Lesson
 
 // Matrix modulingdagi o'z entity'laringni import qilamiz ✅
-import com.uniface.entity.matrix.Lesson
 import com.uniface.entity.matrix.TimeSlot
 import com.uniface.entity.matrix.Room
 

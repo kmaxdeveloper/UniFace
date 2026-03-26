@@ -5,7 +5,7 @@ import ai.timefold.solver.core.api.score.stream.Constraint
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory
 import ai.timefold.solver.core.api.score.stream.ConstraintProvider
 import ai.timefold.solver.core.api.score.stream.Joiners
-import com.uniface.entity.matrix.Lesson
+import com.uniface.entity.Lesson
 import kotlin.math.abs
 
 class MatrixConstraintProvider : ConstraintProvider {
@@ -24,9 +24,10 @@ class MatrixConstraintProvider : ConstraintProvider {
     private fun roomConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal(Lesson::room),
-                Joiners.equal(Lesson::timeslot),
-                Joiners.lessThan(Lesson::id))
+                Joiners.equal { lesson -> lesson.room },
+                Joiners.equal { lesson -> lesson.timeslot },
+                Joiners.lessThan { lesson -> lesson.id ?: 0L } // ID null bo'lsa 0 deb oladi
+            )
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Room conflict")
     }
@@ -34,9 +35,10 @@ class MatrixConstraintProvider : ConstraintProvider {
     private fun teacherConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal(Lesson::teacherName),
-                Joiners.equal(Lesson::timeslot),
-                Joiners.lessThan(Lesson::id))
+                Joiners.equal { lesson -> lesson.teacher },
+                Joiners.equal { lesson -> lesson.timeslot },
+                Joiners.lessThan { lesson -> lesson.id ?: 0L } // Bu yerda ham nullable ID ni hal qilamiz
+            )
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Teacher conflict")
     }
@@ -44,9 +46,10 @@ class MatrixConstraintProvider : ConstraintProvider {
     private fun studentGroupConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal(Lesson::studentGroup),
-                Joiners.equal(Lesson::timeslot),
-                Joiners.lessThan(Lesson::id))
+                Joiners.equal { lesson -> lesson.group },    // Lesson::group o'rniga
+                Joiners.equal { lesson -> lesson.timeslot }, // Lesson::timeslot o'rniga
+                Joiners.lessThan { lesson -> lesson.id ?: 0L } // ID null bo'lsa 0 deb oladi
+            )
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Student group conflict")
     }
@@ -55,7 +58,7 @@ class MatrixConstraintProvider : ConstraintProvider {
     private fun capacityConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .filter { lesson ->
-                val sCount = lesson.studentGroup?.studentCount ?: 0
+                val sCount = lesson.group?.studentCount ?: 0
                 val rCap = lesson.room?.capacity ?: 0
                 // Xona borligini va sig'im yetarli emasligini tekshiramiz
                 lesson.room != null && sCount > rCap
@@ -68,7 +71,7 @@ class MatrixConstraintProvider : ConstraintProvider {
     private fun facultyBuildingStability(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .filter { lesson ->
-                val fName = lesson.studentGroup?.faculty?.name
+                val fName = lesson.group?.faculty?.name
                 // BU YERDA: .name qo'shildi, chunki building bu obyekt ✅
                 val bName = lesson.room?.building?.name
 
@@ -85,7 +88,7 @@ class MatrixConstraintProvider : ConstraintProvider {
     private fun minimizeStudentGaps(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal(Lesson::studentGroup),
+                Joiners.equal(Lesson::group),
                 Joiners.equal { it.timeslot?.dayOfWeek })
             .filter { l1, l2 ->
                 val p1 = l1.timeslot?.pairNumber ?: 0

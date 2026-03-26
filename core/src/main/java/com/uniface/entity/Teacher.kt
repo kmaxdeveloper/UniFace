@@ -15,6 +15,8 @@ class Teacher(
     @JoinColumn(name = "user_id") // User jadvali bilan ulaymiz
     var user: User? = null,
 
+    var department: String = "",
+
     // Ustozga biriktirilgan fanlar (Many-to-Many)
     @ManyToMany
     @JoinTable(

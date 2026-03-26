@@ -1,6 +1,5 @@
 package com.uniface.matrix.util
 
-import com.uniface.entity.matrix.Lesson
 import com.uniface.entity.matrix.Room
 import com.uniface.matrix.domain.*
 import java.time.DayOfWeek

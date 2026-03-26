@@ -33,10 +33,10 @@ class Attendance() {
     var status: String = "PRESENT"
 
     constructor(
-        student: Student,
-        subject: Subject,
-        group: StudentGroup,
-        teacher: Teacher
+        student: Student?,
+        subject: Subject?,
+        group: StudentGroup?,
+        teacher: Teacher?
     ) : this() {
         this.student = student
         this.subject = subject

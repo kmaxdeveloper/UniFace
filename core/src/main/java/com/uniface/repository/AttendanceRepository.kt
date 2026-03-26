@@ -31,7 +31,7 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     """)
     fun existsByStudentAndSubjectToday(
         @Param("student") student: Student,
-        @Param("subject") subject: Subject,
+        @Param("subject") subject: Subject?,
         @Param("startOfDay") startOfDay: LocalDateTime,
         @Param("endOfDay") endOfDay: LocalDateTime
     ): Boolean

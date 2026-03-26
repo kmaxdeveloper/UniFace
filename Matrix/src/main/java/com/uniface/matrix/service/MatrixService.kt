@@ -2,19 +2,19 @@ package com.uniface.matrix.service
 
 import com.uniface.matrix.domain.Timetable
 import com.uniface.matrix.solver.MatrixConstraintProvider
-import com.uniface.entity.matrix.Lesson
-import com.uniface.repository.matrix.MatrixLessonRepository   // Unifacedan import ✅
 import com.uniface.repository.matrix.RoomRepository     // Unifacedan import ✅
 import com.uniface.repository.matrix.TimeslotRepository // Unifacedan import ✅
 import ai.timefold.solver.core.api.solver.SolverFactory
 import ai.timefold.solver.core.config.solver.SolverConfig
+import com.uniface.entity.Lesson
+import com.uniface.repository.LessonRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional // MANA SHU IMPORT SHART ✅
 import java.time.Duration
 
 @Service
 class MatrixService(
-    private val matrixLessonRepository: MatrixLessonRepository,
+    private val matrixLessonRepository: LessonRepository,
     private val roomRepository: RoomRepository,
     private val timeslotRepository: TimeslotRepository
 ) {
@@ -55,7 +55,7 @@ class MatrixService(
             .forEach { lesson ->
                 println("${lesson.timeslot?.dayOfWeek} | ${lesson.timeslot?.pairNumber}-para | " +
                         "Bino: ${lesson.room?.building?.name} | Xona: ${lesson.room?.roomNumber} | " +
-                        "Fan: ${lesson.subject} | Guruh: ${lesson.studentGroup?.name} | Ustoz: ${lesson.teacherName}")
+                        "Fan: ${lesson.subject} | Guruh: ${lesson.group?.name} | Ustoz: ${lesson.teacher}")
             }
         println("Score: ${solution.score}")
     }
