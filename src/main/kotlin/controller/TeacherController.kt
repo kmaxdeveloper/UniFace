@@ -1,5 +1,6 @@
 package com.uniface.controller
 
+import com.uniface.repository.SubjectRepository
 import com.uniface.service.FaceService
 import com.uniface.service.TeacherService
 import org.springframework.http.ResponseEntity
@@ -15,7 +16,8 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping("/api/v1/teacher")
 class TeacherController(
     private val faceService: FaceService,
-    private val teacherService: TeacherService
+    private val teacherService: TeacherService,
+    private val subjectRepository: SubjectRepository
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -51,4 +53,7 @@ class TeacherController(
 
         return ResponseEntity.ok(response)
     }
+
+    @GetMapping("/subjects")
+    fun getSubjects() = ResponseEntity.ok(subjectRepository.findAll())
 }

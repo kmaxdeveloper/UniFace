@@ -29,6 +29,8 @@ class AttendanceController(
         // Davomatni yozish
         val result = attendanceService.markAttendance(request.studentId, lessonId)
 
+        // LOG QO'SHAMIZ:
+        println("DEBUG: WebSocket-ga xabar yuborilyapti. Topic: /topic/lesson/$lessonId")
         // O'qituvchi ekraniga "Pistonchi keldi" deb xabar borishi uchun:
         messagingTemplate.convertAndSend("/topic/lesson/$lessonId", result)
 

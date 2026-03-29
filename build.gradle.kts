@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.testImplementation
+
 plugins {
     //kotlin("jvm") version "2.2.20"
 
@@ -50,6 +52,16 @@ dependencies {
     implementation("com.google.zxing:core:3.5.2") // QR generatsiya
     implementation("com.google.zxing:javase:3.5.2")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("io.mockk:mockk:1.13.5")
+    testImplementation("org.awaitility:awaitility:4.2.0") // WebSocket kechikishlarini kutish uchun
+    // build.gradle.kts (Kotlin bo'lsa)
+    testImplementation("com.h2database:h2")
+
+// yoki build.gradle (Groovy bo'lsa)
+    testImplementation("com.h2database:h2")
 }
 
 tasks.test {
