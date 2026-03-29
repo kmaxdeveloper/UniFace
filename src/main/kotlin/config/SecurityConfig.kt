@@ -44,7 +44,7 @@ class SecurityConfig(
 
                 // Auth va ochiq endpointlar
                 auth.requestMatchers("/api/v1/auth/**").permitAll()
-                auth.requestMatchers("/api/v1/student/scan/**").permitAll()
+                auth.requestMatchers("/api/v1/student/**").hasAnyAuthority("ROLE_STUDENT", "ROLE_ADMIN")
 
                 // Qolgan rollar bo'yicha cheklovlar
                 auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
