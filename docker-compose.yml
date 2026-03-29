@@ -6,6 +6,8 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      # Bazada ham vaqt to'g'ri bo'lishi uchun
+      TZ: Asia/Tashkent
     ports:
       - "5432:5432"
 
@@ -21,5 +23,9 @@ services:
       AWS_ACCESS_KEY: ${MY_AWS_ACCESS_KEY}
       AWS_SECRET_KEY: ${MY_AWS_SECRET_KEY}
       JWT_SECRET: ${MY_JWT_SECRET}
+      # --- VAQT ZONASINI SOZLASH ---
+      TZ: Asia/Tashkent
+      JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Tashkent"
+      # -----------------------------
     depends_on:
       - db
