@@ -124,7 +124,7 @@ class AttendanceService(
 
     fun startNewLesson(request: StartLessonRequest): Long {
         // 1. O'qituvchini username orqali topamiz
-        val teacher = teacherRepository.findByUsername(request.teacherUsername!!)
+        val teacher = teacherRepository.findByUserUsername(request.teacherUsername!!)
             ?: throw EntityNotFoundException("O'qituvchi topilmadi")
 
         // 2. Fan (Subject) obyektini topamiz

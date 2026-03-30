@@ -29,5 +29,5 @@ interface TeacherRepository : JpaRepository<Teacher, Long> {
     @Query("SELECT t FROM Teacher t JOIN t.subjects s WHERE s.id = :subjectId")
     fun findAllBySubjectId(@Param("subjectId") Long: Long): List<Teacher>
 
-    fun findByUsername(username: String): Teacher?
+    fun findByUserUsername(username: String): Teacher?
 }
