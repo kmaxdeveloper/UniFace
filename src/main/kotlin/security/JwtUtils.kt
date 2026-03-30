@@ -15,12 +15,13 @@ class JwtUtils(
     private val jwtExpirationMs = 86400000
     private val signingKey: SecretKey = Keys.hmacShaKeyFor(secret.toByteArray(Charsets.UTF_8))
 
-    fun generateToken(username: String): String {
+    fun generateToken(username: String, roles: List<String>): String { // roles qo'shildi
         val now = Date()
         val expiryDate = Date(now.time + jwtExpirationMs)
 
         return Jwts.builder()
             .setSubject(username)
+            .claim("roles", roles) // Rollarni tokenga joylaymiz ✅
             .setIssuedAt(now)
             .setExpiration(expiryDate)
             .signWith(signingKey, SignatureAlgorithm.HS256)
