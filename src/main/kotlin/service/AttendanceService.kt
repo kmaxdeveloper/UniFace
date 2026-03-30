@@ -5,6 +5,9 @@ import com.uniface.dto.AttendanceStatsDto
 import com.uniface.dto.StartLessonRequest
 import com.uniface.entity.Attendance
 import com.uniface.entity.Lesson
+import com.uniface.exception.AlreadyMarkedException
+import com.uniface.exception.InvalidAttendanceException
+import com.uniface.exception.StudentNotFoundException
 import com.uniface.repository.*
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
@@ -22,23 +25,24 @@ class AttendanceService(
     private val lessonRepository: LessonRepository,
     private val teacherRepository: TeacherRepository
 ) {
+    //InvalidAttendanceException
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
     fun markAttendance(studentId: String, lessonId: Long): AttendanceRecordDto {
         // 1. Talabani bazadan qidiramiz
         val student = studentRepository.findByStudentId(studentId)
-            ?: throw Exception("Talaba topilmadi")
+            ?: throw StudentNotFoundException("Talaba topilmadi")
 
         // 2. Dars seansini topamiz (Lesson ichida hamma narsa bor)
         val lesson = lessonRepository.findById(lessonId)
-            .orElseThrow { Exception("Dars seansi topilmadi") }
+            .orElseThrow { NoSuchElementException("Dars seansi topilmadi") }
 
         // 3. Dublikatni tekshirish (Bir kunda bir marta darsga kirish uchun)
         val startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay()
         val endOfDay = LocalDateTime.now().toLocalDate().atTime(java.time.LocalTime.MAX)
 
         if (attendanceRepository.existsByStudentAndSubjectToday(student, lesson.subject, startOfDay, endOfDay)) {
-            throw Exception("Siz bugun bu fandan davomatdan o'tgansiz!")
+            throw AlreadyMarkedException("Siz bugun bu fandan davomatdan o'tgansiz!")
         }
 
         // 4. YANGI ATTENDANCE YARATISH (Sening konstruktoringga mos)
@@ -71,7 +75,7 @@ class AttendanceService(
     // --- MAVJUD STATISTIKA METODLARI ---
 
     fun getGroupStats(groupId: Long): AttendanceStatsDto {
-        val group = groupRepository.findById(groupId).orElseThrow { Exception("Guruh topilmadi") }
+        val group = groupRepository.findById(groupId).orElseThrow { NoSuchElementException("Guruh topilmadi") }
         val totalStudents = studentRepository.countByGroupId(groupId).toInt()
         val records = attendanceRepository.findByGroupId(groupId)
 

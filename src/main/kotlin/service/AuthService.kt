@@ -8,6 +8,7 @@ import com.uniface.security.JwtUtils
 import com.uniface.repository.UserRepository
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 
 @Service
@@ -26,7 +27,7 @@ class AuthService(
 
         // 2. Foydalanuvchini bazadan olish
         val user = userRepository.findByUsername(request.username)
-            ?: throw RuntimeException("Foydalanuvchi topilmadi")
+            ?: throw UsernameNotFoundException("Foydalanuvchi topilmadi")
 
         // ✅ MUHIM: Foydalanuvchi rolini List ko'rinishida tayyorlaymiz
         // Chunki JwtUtils endi ro'yxat kutmoqda: generateToken(username, roles)
