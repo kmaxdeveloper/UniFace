@@ -1,23 +1,29 @@
 package com.uniface.controller
 
+import com.uniface.dto.StartLessonRequest
+import com.uniface.entity.Lesson
 import com.uniface.repository.SubjectRepository
+import com.uniface.service.AttendanceService
 import com.uniface.service.FaceService
 import com.uniface.service.TeacherService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
+import java.security.Principal
 
 @RestController
 @RequestMapping("/api/v1/teacher")
 class TeacherController(
     private val faceService: FaceService,
     private val teacherService: TeacherService,
-    private val subjectRepository: SubjectRepository
+    private val subjectRepository: SubjectRepository,
+    private val attendanceService: AttendanceService
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -56,4 +62,18 @@ class TeacherController(
 
     @GetMapping("/subjects")
     fun getSubjects() = ResponseEntity.ok(subjectRepository.findAll())
+
+    @PostMapping("/lessons/start")
+    fun startLesson(
+        @RequestBody request: StartLessonRequest,
+        principal: Principal
+    ): ResponseEntity<Long> {
+        // Requestni yangi username bilan nusxalaymiz (copy)
+        val updatedRequest = request.copy(teacherUsername = principal.name)
+
+        // Endi service-ga bitta argument yuboryapmiz, xato yo'qoladi!
+        val lessonId = attendanceService.startNewLesson(updatedRequest)
+
+        return ResponseEntity.ok(lessonId)
+    }
 }

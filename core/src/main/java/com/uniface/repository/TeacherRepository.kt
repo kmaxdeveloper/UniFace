@@ -28,4 +28,6 @@ interface TeacherRepository : JpaRepository<Teacher, Long> {
     // 5. Fan bo'yicha o'qituvchilarni topish (Mizan AI'da topshiriqni kim berganini aniqlashda)
     @Query("SELECT t FROM Teacher t JOIN t.subjects s WHERE s.id = :subjectId")
     fun findAllBySubjectId(@Param("subjectId") Long: Long): List<Teacher>
+
+    fun findByUsername(username: String): Teacher?
 }

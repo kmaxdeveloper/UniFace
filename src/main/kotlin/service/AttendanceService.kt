@@ -2,8 +2,11 @@ package com.uniface.service
 
 import com.uniface.dto.AttendanceRecordDto
 import com.uniface.dto.AttendanceStatsDto
+import com.uniface.dto.StartLessonRequest
 import com.uniface.entity.Attendance
+import com.uniface.entity.Lesson
 import com.uniface.repository.*
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -16,7 +19,8 @@ class AttendanceService(
     private val studentRepository: StudentRepository,
     private val groupRepository: StudentGroupRepository,
     private val subjectRepository: SubjectRepository,
-    private val lessonRepository: LessonRepository
+    private val lessonRepository: LessonRepository,
+    private val teacherRepository: TeacherRepository
 ) {
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
 
@@ -116,5 +120,34 @@ class AttendanceService(
             attendancePercent = 100.0,
             records = records.map { it.toDto() }
         )
+    }
+
+    fun startNewLesson(request: StartLessonRequest): Long {
+        // 1. O'qituvchini username orqali topamiz
+        val teacher = teacherRepository.findByUsername(request.teacherUsername!!)
+            ?: throw EntityNotFoundException("O'qituvchi topilmadi")
+
+        // 2. Fan (Subject) obyektini topamiz
+        val subject = subjectRepository.findById(request.subjectId)
+            .orElseThrow { EntityNotFoundException("Fan topilmadi") }
+
+        // 3. Guruh (StudentGroup) obyektini topamiz
+        val group = groupRepository.findById(request.groupId)
+            .orElseThrow { EntityNotFoundException("Guruh topilmadi") }
+
+        // 4. Yangi Lesson yaratish
+        val newLesson = Lesson(
+            subject = subject,
+            teacher = teacher,
+            group = group,
+            startTime = LocalDateTime.now(),
+            isActive = true
+        )
+
+        // 5. Saqlash va Long ID qaytarish
+        val savedLesson = lessonRepository.save(newLesson)
+
+        // Return type mismatch (Long? -> Long) xatosini !! yoki ?: orqali hal qilamiz
+        return savedLesson.id ?: throw IllegalStateException("Lesson ID generatsiya qilinmadi")
     }
 }
