@@ -1,6 +1,7 @@
 package com.uniface.repository
 
 import com.uniface.entity.Attendance
+import com.uniface.entity.Lesson
 import com.uniface.entity.Student
 import com.uniface.entity.Subject
 import org.springframework.data.jpa.repository.JpaRepository
@@ -57,4 +58,10 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
         @Param("start") start: LocalDateTime,
         @Param("end") end: LocalDateTime
     ): List<Attendance>
+
+    // 1. Spring Data JPA nomlash standarti orqali (Avtomatik ishlaydi)
+    fun existsByStudentAndLesson(student: Student, lesson: Lesson): Boolean
+
+    // 2. Yoki aniqroq ID-lar bo'yicha tekshirish (Service-da qulayroq bo'lishi mumkin)
+    fun existsByStudentStudentIdAndLessonId(studentId: String, lessonId: Long): Boolean
 }

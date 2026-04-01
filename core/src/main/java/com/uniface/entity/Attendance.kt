@@ -22,25 +22,30 @@ class Attendance() {
     @JoinColumn(name = "group_id", nullable = false)
     var group: StudentGroup? = null
 
-    // String o'rniga Teacher entity-sini bog'laymiz (identifikatsiya uchun)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id", nullable = false)
     var teacher: Teacher? = null
 
-    var timestamp: LocalDateTime = LocalDateTime.now()
+    // MANA SHU YERDA LESSON BO'LISHI SHART!
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_id", nullable = false)
+    var lesson: Lesson? = null
 
-    // Statusni Enum qilishni maslahat beraman (PRESENT, ABSENT, LATE)
+    var timestamp: LocalDateTime = LocalDateTime.now()
     var status: String = "PRESENT"
 
     constructor(
         student: Student?,
         subject: Subject?,
         group: StudentGroup?,
-        teacher: Teacher?
+        teacher: Teacher?,
+        lesson: Lesson? // Lesson qabul qilamiz
     ) : this() {
         this.student = student
         this.subject = subject
         this.group = group
         this.teacher = teacher
+        this.lesson = lesson // Lesson-ni lesson maydoniga saqlaymiz
+        this.timestamp = LocalDateTime.now()
     }
 }

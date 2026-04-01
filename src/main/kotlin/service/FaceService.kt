@@ -237,7 +237,14 @@ class FaceService(
                         )
                         if (!isAlreadyMarked) {
 
-                            attendanceRepository.save(Attendance(student, subject, group, teacher))
+                            val attendance = Attendance(
+                                student,
+                                subject,
+                                group,
+                                teacher,
+                                null // Lesson bu yerda null bo'ladi
+                            )
+                            attendanceRepository.save(attendance)
                             identifiedStudents.add("✅ ${student.fullName}")
                         } else {
                             alreadyMarkedStudents.add("🔄 ${student.fullName} (allaqachon belgilangan)")

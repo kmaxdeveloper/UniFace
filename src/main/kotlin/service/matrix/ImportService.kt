@@ -58,13 +58,14 @@ class ImportService(
             val teacher = teacherRepo.findByUserId(lDto.teacherName.toLong())
 
             if (group != null && subject != null) {
-                // Lesson obyektini aniq tipda yarating
+                // XATONI TO'G'IRLASH:
+                // group ni bitta elementli MutableSet ga aylantirib yuboramiz
                 val newLesson = Lesson(
                     subject = subject,
                     teacher = teacher,
-                    group = group
+                    groups = mutableSetOf(group) // SHU YERDA: bitta guruhni Set qilib o'raymiz ✅
                 )
-                lessonRepo.save(newLesson) // Endi "S" parametrini aniqlay oladi ✅
+                lessonRepo.save(newLesson)
             }
         }
     }

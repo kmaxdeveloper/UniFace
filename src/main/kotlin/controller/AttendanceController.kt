@@ -1,8 +1,12 @@
 package com.uniface.controller
 
+import com.uniface.dto.AttendanceRecordDto
+import com.uniface.dto.StartLessonRequest
 import com.uniface.entity.ScanRequest
+import com.uniface.repository.LessonRepository
 import com.uniface.service.AttendanceService
 import com.uniface.service.QrService // Yangi servis
+import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate // WebSocket uchun
 import org.springframework.web.bind.annotation.*
@@ -12,29 +16,61 @@ import org.springframework.web.bind.annotation.*
 class AttendanceController(
     private val attendanceService: AttendanceService,
     private val qrService: QrService,
-    private val messagingTemplate: SimpMessagingTemplate
+    private val messagingTemplate: SimpMessagingTemplate,
+    private val lessonRepository: LessonRepository
 ) {
 
-    @GetMapping("/teacher/generate-qr/{lessonId}")
-    fun getQr(@PathVariable lessonId: Long) =
-        ResponseEntity.ok(mapOf("qrToken" to qrService.generateQrToken(lessonId)))
+    @GetMapping("/teacher/refresh-qr/{lessonId}")
+    fun refreshQr(@PathVariable lessonId: Long): ResponseEntity<Any> {
+        // 1. Dars hali faolmi? (isActive == true)
+        val lesson = lessonRepository.findById(lessonId).orElse(null)
+        if (lesson == null || !lesson.isActive) {
+            return ResponseEntity.status(403).body("Dars yakunlangan yoki topilmadi!")
+        }
 
-    // 2. TALABA UCHUN: Skaner qilganda yuboriladigan API
+        val token = qrService.generateQrToken(lessonId)
+        return ResponseEntity.ok(mapOf("qrToken" to token))
+    }
+
     @PostMapping("/student/scan")
     fun scan(@RequestBody request: ScanRequest): ResponseEntity<Any> {
-        // Tokendan lessonId ni olamiz (vaqtini ham tekshiradi)
-        val lessonId = qrService.getLessonIdFromToken(request.qrToken)
-            ?: return ResponseEntity.status(401).body("QR kod muddati o'tgan yoki xato!")
+        try {
+            // 1. To'g'ridan-to'g'ri tokenni yuboramiz (chunki servis String kutmoqda)
+            val result = attendanceService.markAttendance(
+                request.studentId,
+                request.qrToken  // Token String turida, error endi ketadi!
+            )
 
-        // Davomatni yozish
-        val result = attendanceService.markAttendance(request.studentId, lessonId)
+            // 2. WebSocket uchun ID baribir kerak bo'lsa, uni tokendan olamiz
+            val lessonId = qrService.getLessonIdFromToken(request.qrToken)
+            messagingTemplate.convertAndSend("/topic/lesson/$lessonId", result)
 
-        // LOG QO'SHAMIZ:
-        println("DEBUG: WebSocket-ga xabar yuborilyapti. Topic: /topic/lesson/$lessonId")
-        // O'qituvchi ekraniga "Pistonchi keldi" deb xabar borishi uchun:
-        messagingTemplate.convertAndSend("/topic/lesson/$lessonId", result)
+            return ResponseEntity.ok(result)
+        } catch (e: Exception) {
+            // Servis ichidagi InvalidAttendanceException (15s vaqt o'tishi) shu yerga tushadi
+            return ResponseEntity.status(400).body(e.message)
+        }
+    }
 
-        return ResponseEntity.ok(result)
+    @PostMapping("/teacher/start-lesson")
+    fun startLesson(@RequestBody request: StartLessonRequest): ResponseEntity<Any> {
+        return try {
+            // Darsni boshlash va ID ni olish
+            val lessonId = attendanceService.startNewLesson(request)
+
+            println("INFO: Yangi dars boshlandi. ID: $lessonId, Ustoz: ${request.teacherUsername}")
+            ResponseEntity.ok(lessonId)
+        } catch (e: EntityNotFoundException) {
+            // Masalan: Fan yoki Guruh topilmasa
+            ResponseEntity.status(404).body(mapOf("error" to e.message))
+        } catch (e: IllegalStateException) {
+            // Masalan: O'qituvchida allaqachon faol dars bo'lsa
+            ResponseEntity.status(409).body(mapOf("error" to e.message))
+        } catch (e: Exception) {
+            // Kutilmagan boshqa xatolar
+            println("ERROR: Dars boshlashda xatolik: ${e.message}")
+            ResponseEntity.status(500).body(mapOf("error" to "Serverda ichki xatolik yuz berdi"))
+        }
     }
 
     // --- ESKI ADMIN/TEACHER STATISTIKALARI ---

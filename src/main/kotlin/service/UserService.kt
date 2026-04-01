@@ -1,31 +1,61 @@
 package com.uniface.service
 
 import com.uniface.data.Role
+import com.uniface.dto.TeacherDto
 import com.uniface.entity.User
 import com.uniface.dto.UserDto // Controller'dan keladigan ma'lumotlar
+import com.uniface.entity.Teacher
+import com.uniface.repository.GroupRepository
+import com.uniface.repository.SubjectRepository
+import com.uniface.repository.TeacherRepository
 import com.uniface.repository.UserRepository
+import jakarta.transaction.Transactional
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
 class UserService(
     private val userRepository: UserRepository,
+    private val teacherRepository: TeacherRepository,
+    private val subjectRepository: SubjectRepository,
+    private val groupRepository: GroupRepository,
     private val passwordEncoder: PasswordEncoder
 ) {
 
-    // 1. Yangi ustozni saqlash (DTO qabul qiladi)
-    fun saveTeacher(request: UserDto): User {
-        if (userRepository.existsByUsername(request.username)) {
-            throw RuntimeException("Bu login band, boshqa tanlang!")
+    @Transactional
+    fun saveTeacher(dto: TeacherDto) {
+        // 1. Userni yaratamiz
+        val user = userRepository.save(User(
+            fullName = dto.fullName,
+            username = dto.username,
+            password = passwordEncoder.encode(dto.password),
+            role = Role.ROLE_TEACHER
+        ))
+
+        // 2. Teacher obyektini yaratamiz
+        val teacher = Teacher(
+            fullName = dto.fullName,
+            user = user,
+            department = dto.department,
+            faculty = dto.faculty,
+            points = dto.points,
+            status = dto.status
+        )
+
+        // 3. Fanlarni ID bo'yicha bazadan olib, ustozga biriktiramiz
+        if (dto.subjectIds.isNotEmpty()) {
+            val subjects = subjectRepository.findAllById(dto.subjectIds)
+            teacher.subjects = subjects.toMutableSet()
         }
 
-        val newUser = User(
-            fullName = request.fullName,
-            username = request.username,
-            password = passwordEncoder.encode(request.password), // Shifrlash
-            role = Role.ROLE_TEACHER
-        )
-        return userRepository.save(newUser)
+        // 4. Guruhlarni ID bo'yicha bazadan olib, ustozga biriktiramiz
+        if (dto.groupIds.isNotEmpty()) {
+            val groups = groupRepository.findAllById(dto.groupIds)
+            teacher.groups = groups.toMutableSet()
+        }
+
+        // 5. Hammasi tayyor bo'lgach, bittada saqlaymiz
+        teacherRepository.save(teacher)
     }
 
     // 2. Ustoz ma'lumotlarini yangilash (DTO qabul qiladi)

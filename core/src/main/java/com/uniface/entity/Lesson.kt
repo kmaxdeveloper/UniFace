@@ -1,5 +1,6 @@
 package com.uniface.entity
 
+import com.uniface.data.LessonType
 import com.uniface.entity.matrix.Room
 import com.uniface.entity.matrix.TimeSlot
 import jakarta.persistence.*
@@ -17,22 +18,29 @@ class Lesson(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
-    var teacher: Teacher? = null, // Endi teacherName o'rniga haqiqiy Teacher entity ishlatamiz
+    var teacher: Teacher? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "group_id")
-    var group: StudentGroup? = null,
+    // 1. O'ZGARISH: Bir nechta guruhni qo'llab-quvvatlash (Potok uchun)
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+        name = "lesson_groups",
+        joinColumns = [JoinColumn(name = "lesson_id")],
+        inverseJoinColumns = [JoinColumn(name = "group_id")]
+    )
+    var groups: MutableSet<StudentGroup> = mutableSetOf(),
 
-    // Algoritm (Matrix) uchun kerakli maydonlar
+    // 2. O'ZGARISH: Dars turi (Ma'ruza yoki Amaliyot)
+    @Enumerated(EnumType.STRING)
+    var type: LessonType = LessonType.PRACTICE,
+
     @ManyToOne(fetch = FetchType.LAZY)
     var timeslot: TimeSlot? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     var room: Room? = null,
 
-    // Davomat va QR-kod uchun maydonlar
     var startTime: LocalDateTime = LocalDateTime.now(),
     var endTime: LocalDateTime? = null,
 
-    var isActive: Boolean = true // QR-kod faolligini tekshirish uchun
+    var isActive: Boolean = true
 )

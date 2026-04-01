@@ -10,6 +10,7 @@ import com.uniface.exception.InvalidAttendanceException
 import com.uniface.exception.StudentNotFoundException
 import com.uniface.repository.*
 import jakarta.persistence.EntityNotFoundException
+import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,42 +24,11 @@ class AttendanceService(
     private val groupRepository: StudentGroupRepository,
     private val subjectRepository: SubjectRepository,
     private val lessonRepository: LessonRepository,
-    private val teacherRepository: TeacherRepository
+    private val teacherRepository: TeacherRepository,
+    private val qrService: QrService
 ) {
     //InvalidAttendanceException
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
-
-    fun markAttendance(studentId: String, lessonId: Long): AttendanceRecordDto {
-        // 1. Talabani bazadan qidiramiz
-        val student = studentRepository.findByStudentId(studentId)
-            ?: throw StudentNotFoundException("Talaba topilmadi")
-
-        // 2. Dars seansini topamiz (Lesson ichida hamma narsa bor)
-        val lesson = lessonRepository.findById(lessonId)
-            .orElseThrow { NoSuchElementException("Dars seansi topilmadi") }
-
-        // 3. Dublikatni tekshirish (Bir kunda bir marta darsga kirish uchun)
-        val startOfDay = LocalDateTime.now().toLocalDate().atStartOfDay()
-        val endOfDay = LocalDateTime.now().toLocalDate().atTime(java.time.LocalTime.MAX)
-
-        if (attendanceRepository.existsByStudentAndSubjectToday(student, lesson.subject, startOfDay, endOfDay)) {
-            throw AlreadyMarkedException("Siz bugun bu fandan davomatdan o'tgansiz!")
-        }
-
-        // 4. YANGI ATTENDANCE YARATISH (Sening konstruktoringga mos)
-        val newAttendance = Attendance(
-            student = student,
-            subject = lesson.subject,
-            group = lesson.group,
-            teacher = lesson.teacher // String emas, Teacher obyektini o'zini beramiz!
-        ).apply {
-            this.timestamp = LocalDateTime.now()
-            this.status = "PRESENT"
-        }
-
-        // 5. Saqlash va DTO ga o'girib qaytarish
-        return attendanceRepository.save(newAttendance).toDto()
-    }
 
     private fun Attendance.toDto() = AttendanceRecordDto(
         studentId = student?.studentId ?: "",
@@ -126,32 +96,87 @@ class AttendanceService(
         )
     }
 
+
+    // ==========================================================================
+    @Transactional
+    fun markAttendance(studentId: String, qrToken: String): AttendanceRecordDto {
+        // 1. JWT Token tekshiruvi
+        val lessonId = qrService.getLessonIdFromToken(qrToken)
+            ?: throw InvalidAttendanceException("QR-kod muddati o'tgan yoki xato!")
+
+        val student = studentRepository.findByStudentId(studentId)
+            ?: throw StudentNotFoundException("Talaba topilmadi")
+
+        val lesson = lessonRepository.findById(lessonId)
+            .orElseThrow { NoSuchElementException("Dars seansi topilmadi") }
+
+        // 2. Dars va Guruh tekshiruvi
+        if (!lesson.isActive) {
+            throw InvalidAttendanceException("Dars yakunlangan!")
+        }
+
+        val isStudentInGroup = lesson.groups.any { it.id == student.group?.id }
+        if (!isStudentInGroup) {
+            throw InvalidAttendanceException("Sizning guruhingiz bu darsga biriktirilmagan!")
+        }
+
+        // 3. Dublikat tekshiruvi
+        if (attendanceRepository.existsByStudentAndLesson(student, lesson)) {
+            throw AlreadyMarkedException("Siz allaqachon davomatdan o'tgansiz!")
+        }
+
+        // 4. Attendance yaratish (Secondary Constructor tartibida)
+        // DIQQAT: Ismlarni yozmaymiz, faqat tartib bilan o'zgaruvchilarni yuboramiz
+        val newAttendance = Attendance(
+            student,          // student
+            lesson.subject,   // subject
+            student.group,    // group
+            lesson.teacher,   // teacher
+            lesson            // lesson
+        )
+
+        val savedAttendance = attendanceRepository.save(newAttendance)
+
+        return savedAttendance.toDto()
+    }
+
+    @Transactional
     fun startNewLesson(request: StartLessonRequest): Long {
-        // 1. O'qituvchini username orqali topamiz
-        val teacher = teacherRepository.findByUserUsername(request.teacherUsername!!)
+        // 1. O'qituvchini tekshirish
+        val teacher = teacherRepository.findByUserUsername(request.teacherUsername ?: throw IllegalArgumentException("Username bo'sh!"))
             ?: throw EntityNotFoundException("O'qituvchi topilmadi")
 
-        // 2. Fan (Subject) obyektini topamiz
+        // 2. XAVFSIZLIK: O'qituvchida allaqachon faol dars bormi?
+        // Agar bo'lsa, uni avtomatik yopamiz yoki xato beramiz.
+        val activeLesson = lessonRepository.findByTeacherUserUsernameAndIsActiveTrue(teacher.user.username)
+        if (activeLesson != null) {
+            // Variant A: Eskisini yopish
+            activeLesson.isActive = false
+            activeLesson.endTime = LocalDateTime.now()
+            lessonRepository.save(activeLesson)
+            // Variant B: throw IllegalStateException("Sizda hali yakunlanmagan dars bor!")
+        }
+
+        // 3. Fanni tekshirish
         val subject = subjectRepository.findById(request.subjectId)
             .orElseThrow { EntityNotFoundException("Fan topilmadi") }
 
-        // 3. Guruh (StudentGroup) obyektini topamiz
-        val group = groupRepository.findById(request.groupId)
-            .orElseThrow { EntityNotFoundException("Guruh topilmadi") }
+        // 4. Guruhlarni tekshirish (To'liqligini tekshiramiz)
+        val groups = groupRepository.findAllById(request.groupIds)
+        if (groups.size != request.groupIds.size) {
+            throw EntityNotFoundException("Ba'zi guruhlar topilmadi! (Kiritilgan: ${request.groupIds.size}, Topilgan: ${groups.size})")
+        }
 
-        // 4. Yangi Lesson yaratish
         val newLesson = Lesson(
             subject = subject,
             teacher = teacher,
-            group = group,
+            groups = groups.toMutableSet(),
+            type = request.lessonType,
             startTime = LocalDateTime.now(),
             isActive = true
         )
 
-        // 5. Saqlash va Long ID qaytarish
         val savedLesson = lessonRepository.save(newLesson)
-
-        // Return type mismatch (Long? -> Long) xatosini !! yoki ?: orqali hal qilamiz
-        return savedLesson.id ?: throw IllegalStateException("Lesson ID generatsiya qilinmadi")
+        return savedLesson.id ?: throw IllegalStateException("Bazaga saqlashda ID generatsiya bo'lmadi")
     }
 }

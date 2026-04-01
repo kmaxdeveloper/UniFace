@@ -1,5 +1,6 @@
 package com.uniface.controller
 
+import com.uniface.dto.TeacherDto
 import com.uniface.dto.UserDto
 import com.uniface.entity.StudentGroup
 import com.uniface.entity.Subject
@@ -52,12 +53,12 @@ class AdminController(
 
     // --- 4. USTOZLARNI BOSHQARISH ---
     @PostMapping("/add-teacher")
-    fun addTeacher(@RequestBody request: UserDto): ResponseEntity<String> {
+    fun addTeacher(@RequestBody dto: TeacherDto): ResponseEntity<String> {
         return try {
-            userService.saveTeacher(request)
-            ResponseEntity.ok("Ustoz muvaffaqiyatli qo'shildi!")
-        } catch (e: RuntimeException) {
-            ResponseEntity.badRequest().body(e.message) // Masalan: "Bu login band..."
+            userService.saveTeacher(dto)
+            ResponseEntity.ok("O'qituvchi muvaffaqiyatli qo'shildi!")
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body("Xatolik: ${e.message}")
         }
     }
 

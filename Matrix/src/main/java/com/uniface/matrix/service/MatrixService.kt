@@ -55,7 +55,7 @@ class MatrixService(
             .forEach { lesson ->
                 println("${lesson.timeslot?.dayOfWeek} | ${lesson.timeslot?.pairNumber}-para | " +
                         "Bino: ${lesson.room?.building?.name} | Xona: ${lesson.room?.roomNumber} | " +
-                        "Fan: ${lesson.subject} | Guruh: ${lesson.group?.name} | Ustoz: ${lesson.teacher}")
+                        "Fan: ${lesson.subject} | Guruh: ${lesson.groups} | Ustoz: ${lesson.teacher}")
             }
         println("Score: ${solution.score}")
     }

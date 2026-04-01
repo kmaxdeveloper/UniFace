@@ -10,31 +10,25 @@ class Teacher(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-    var fullName: String,
+    var fullName: String,           // 2. Ism-sharif
 
-    @OneToOne
-    @JoinColumn(name = "user_id") // User jadvali bilan ulaymiz
-    @JsonBackReference
-    var user: User? = null,
+    @OneToOne(cascade = [CascadeType.ALL])
+    @JoinColumn(name = "user_id")
+    var user: User,                 // 3. Login/Parol (User jadvali)
 
-    var department: String = "",
+    var department: String = "",    // 7. Kafedra
+    var faculty: String = "",       // 7. Fakultet
+    var points: Int = 0,            // 6. Ballar (Rag'bat)
 
-    // Ustozga biriktirilgan fanlar (Many-to-Many)
+    var status: Boolean = true,     // 8. Holati (Active/Inactive)
+
+    // 4. Fanlari
     @ManyToMany
-    @JoinTable(
-        name = "teacher_subjects",
-        joinColumns = [JoinColumn(name = "teacher_id")],
-        inverseJoinColumns = [JoinColumn(name = "subject_id")]
-    )
+    @JoinTable(name = "teacher_subjects")
     var subjects: MutableSet<Subject> = mutableSetOf(),
 
-    // Ustozga biriktirilgan guruhlar (Many-to-Many)
-
+    // 5. Guruhlari
     @ManyToMany
-    @JoinTable(
-        name = "teacher_groups",
-        joinColumns = [JoinColumn(name = "teacher_id")],
-        inverseJoinColumns = [JoinColumn(name = "group_id")]
-    )
+    @JoinTable(name = "teacher_groups")
     var groups: MutableSet<StudentGroup> = mutableSetOf()
 )
