@@ -11,8 +11,11 @@ interface GroupRepository : JpaRepository<StudentGroup, Long> {
     // 1. Nom bo'yicha qidirish (masalan: "611-21")
     fun findByName(name: String): StudentGroup?
 
-    // 2. Muayyan fakultetga tegishli barcha guruhlarni olish
-    fun findAllByFaculty(faculty: String): List<StudentGroup>
+    @Query("SELECT g FROM StudentGroup g WHERE g.faculty.name = :facultyName")
+    fun findAllByFacultyName(facultyName: String): List<StudentGroup>
+
+    // Agar metodni nomi bo'yicha ishlatmoqchi bo'lsang:
+    fun findAllByFaculty_Name(name: String): List<StudentGroup>
 
     // 3. O'qituvchiga biriktirilgan guruhlarni ID orqali olish (Custom Query)
     @Query("""
