@@ -1,5 +1,6 @@
 package com.uniface.entity.matrix
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.*
 
 @Entity
@@ -10,6 +11,8 @@ class Department(
     @Column(unique = true, nullable = false)
     val name: String = "", // Masalan: Dasturiy injiniring kafedrasi
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY) // Faqat kerak bo'lgandagina yuklanadi
+    @JoinColumn(name = "faculty_id")
+    //@JsonIgnoreProperties("departments")
     val faculty: Faculty? = null // Qaysi fakultetga qarashliligi
 )
