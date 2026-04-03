@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.security.Principal
 import org.springframework.http.HttpStatus
+import org.springframework.security.core.context.SecurityContextHolder
 
 @RestController
 @RequestMapping("/api/v1/teacher")
@@ -68,7 +69,7 @@ class TeacherController(
     }
 
     @GetMapping("/subjects")
-    fun getSubjects() = ResponseEntity.ok(subjectRepository.findAll())
+    fun getAllSubjects() = ResponseEntity.ok(subjectRepository.findAll())
 
     @PostMapping("/lessons/start")
     fun startLesson(
@@ -85,18 +86,21 @@ class TeacherController(
     }
 
     @GetMapping("/get-subjects")
-    fun getSubjects(authentication: Authentication): ResponseEntity<Any> {
-        val username = authentication.name
+    fun getSubjects(): ResponseEntity<Any> {
+        // 1. Login qilgan odamning ma'lumotlarini context'dan olamiz (Parametrda null bermasligi uchun)
+        val auth = SecurityContextHolder.getContext().authentication
 
-        // 1. TeacherRepository orqali o'qituvchini hamma narsasi bilan topamiz
-        // (Repository-da 'findByUserUsername' funksiyasi borligini tekshir)
-        val teacher = teacherRepository.findByUserUsername(username)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Ustoz profili topilmadi")
+        // 2. Tizimga kirganini tekshiramiz
+        if (auth == null || !auth.isAuthenticated || auth.name == "anonymousUser") {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Tizimga kirmagansiz!")
+        }
 
-        // 2. Entity ichidagi tayyor 'subjects'ni olamiz
-        // Senda 'MutableSet<Subject>' ekan, shuni list ko'rinishida qaytaramiz
-        val subjectsList = teacher.subjects.toList()
+        // 3. Username orqali o'qituvchini va uning fanlarini bazadan olamiz
+        val teacher = teacherRepository.findByUserUsername(auth.name)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Ustoz profili topilmadi!")
 
-        return ResponseEntity.ok(subjectsList)
+        // 4. Faqat fanlar ro'yxatini qaytaramiz
+        // 'Set'ni 'List'ga o'girib yuborsang, frontendda array bo'lib boradi
+        return ResponseEntity.ok(teacher.subjects.toList())
     }
 }
