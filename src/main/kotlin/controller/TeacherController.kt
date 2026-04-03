@@ -4,6 +4,7 @@ import com.uniface.dto.StartLessonRequest
 import com.uniface.entity.Lesson
 import com.uniface.entity.Subject
 import com.uniface.repository.SubjectRepository
+import com.uniface.repository.TeacherRepository
 import com.uniface.repository.UserRepository
 import com.uniface.service.AttendanceService
 import com.uniface.service.FaceService
@@ -28,7 +29,8 @@ class TeacherController(
     private val teacherService: TeacherService,
     private val subjectRepository: SubjectRepository,
     private val attendanceService: AttendanceService,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val teacherRepository: TeacherRepository
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -83,17 +85,18 @@ class TeacherController(
     }
 
     @GetMapping("/get-subjects")
-    fun getSubjects(authentication: Authentication): ResponseEntity<List<Subject>> {
+    fun getSubjects(authentication: Authentication): ResponseEntity<Any> {
         val username = authentication.name
 
-        // Userni topamiz
-        val teacher = userRepository.findByUsername(username)
-            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+        // 1. TeacherRepository orqali o'qituvchini hamma narsasi bilan topamiz
+        // (Repository-da 'findByUserUsername' funksiyasi borligini tekshir)
+        val teacher = teacherRepository.findByUserUsername(username)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Ustoz profili topilmadi")
 
-        // XATO SHU YERDA EDI: teacher.id!! orqali biz uni Long (not-null) ga aylantiramiz
-        // Chunki biz yuqorida teacher null emasligini tekshirib oldik
-        val subjects = subjectRepository.findAllByTeacherId(teacher.id!!)
+        // 2. Entity ichidagi tayyor 'subjects'ni olamiz
+        // Senda 'MutableSet<Subject>' ekan, shuni list ko'rinishida qaytaramiz
+        val subjectsList = teacher.subjects.toList()
 
-        return ResponseEntity.ok(subjects)
+        return ResponseEntity.ok(subjectsList)
     }
 }
