@@ -23,6 +23,12 @@ class JwtAuthFilter(
     ) {
         val authHeader = request.getHeader("Authorization")
         var token: String? = null
+        val path = request.servletPath
+
+        if (path.startsWith("/ws-attendance")) {
+            filterChain.doFilter(request, response)
+            return // SHU YERDA TO'XTAYDI VA KEYINGI BOSQICHGA O'TADI
+        }
 
         // 1. Tokenni qidirish (Header yoki URL param)
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
