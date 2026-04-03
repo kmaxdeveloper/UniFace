@@ -7,6 +7,7 @@ import com.uniface.repository.LessonRepository
 import com.uniface.service.AttendanceService
 import com.uniface.service.QrService // Yangi servis
 import jakarta.persistence.EntityNotFoundException
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.messaging.simp.SimpMessagingTemplate // WebSocket uchun
 import org.springframework.web.bind.annotation.*
@@ -32,23 +33,28 @@ class AttendanceController(
         return ResponseEntity.ok(mapOf("qrToken" to token))
     }
 
-    @PostMapping("/student/scan")
+    @PostMapping("/student/scan", produces = [MediaType.TEXT_PLAIN_VALUE])
     fun scan(@RequestBody request: ScanRequest): ResponseEntity<Any> {
-        try {
-            // 1. To'g'ridan-to'g'ri tokenni yuboramiz (chunki servis String kutmoqda)
+        return try {
+            // 1. Servis orqali davomatni belgilash
             val result = attendanceService.markAttendance(
                 request.studentId,
-                request.qrToken  // Token String turida, error endi ketadi!
+                request.qrToken
             )
 
-            // 2. WebSocket uchun ID baribir kerak bo'lsa, uni tokendan olamiz
+            // 2. WebSocket orqali xabar yuborish
             val lessonId = qrService.getLessonIdFromToken(request.qrToken)
             messagingTemplate.convertAndSend("/topic/lesson/$lessonId", result)
 
-            return ResponseEntity.ok(result)
+            // Muvaffaqiyatli javob (String)
+            ResponseEntity.ok(result)
         } catch (e: Exception) {
-            // Servis ichidagi InvalidAttendanceException (15s vaqt o'tishi) shu yerga tushadi
-            return ResponseEntity.status(400).body(e.message)
+            // Xatolik xabarini toza matn ko'rinishida qaytaramiz
+            // Bu Android'dagi response.errorBody()?.string() ga tushadi
+            ResponseEntity
+                .status(400)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(e.message ?: "Serverda kutilmagan xatolik yuz berdi")
         }
     }
 

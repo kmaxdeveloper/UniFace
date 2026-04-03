@@ -21,35 +21,24 @@ class JwtAuthFilter(
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val path = request.servletPath
-
-        // 1. WebSocket endpointlarini tekshiruvdan butunlay o'tkazib yuboramiz.
-        // Chunki SecurityConfig da .permitAll() qilganmiz, filter bu yerda xalaqit bermasligi kerak.
-        if (path.startsWith("/ws-attendance")) {
-            filterChain.doFilter(request, response)
-            return
-        }
-
         val authHeader = request.getHeader("Authorization")
         var token: String? = null
 
-        // 2. Tokenni Headerdan yoki URL parametridan qidiramiz
+        // 1. Tokenni qidirish (Header yoki URL param)
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             token = authHeader.substring(7)
         } else {
-            // SockJS uchun: /ws-attendance/info?token=...
+            // SockJS uchun URL dan tokenni olamiz
             token = request.getParameter("token")
         }
 
-        // 3. Agar token topilsa, autentifikatsiyani amalga oshiramiz
-        if (token != null) {
+        // 2. Agar token bo'lsa, uni tekshirib contextga qo'yamiz
+        if (token != null && SecurityContextHolder.getContext().authentication == null) {
             try {
                 if (jwtUtils.validateToken(token)) {
                     val username = jwtUtils.getUsernameFromToken(token)
-
-                    if (username != null && SecurityContextHolder.getContext().authentication == null) {
+                    if (username != null) {
                         val userDetails = userDetailsService.loadUserByUsername(username)
-
                         val authentication = UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.authorities
                         )
@@ -58,13 +47,13 @@ class JwtAuthFilter(
                     }
                 }
             } catch (e: Exception) {
-                // Xato bo'lsa contextni tozalaymiz, lekin so'rovni to'xtatmaymiz (filterChain davom etadi)
-                println("JWT Authentication Error: ${e.message}")
-                SecurityContextHolder.clearContext()
+                // Logga chiqaramiz, lekin filterChainni to'xtatmaymiz
+                logger.error("JWT Error: ${e.message}")
             }
         }
 
-        // 4. Zanjirni davom ettiramiz
+        // 3. WebSocket yo'llari uchun SecurityConfig dagi .permitAll() ishlashi kerak
+        // Lekin biz yuqorida tokenni o'qib bo'ldik (agar u bo'lsa)
         filterChain.doFilter(request, response)
     }
 }

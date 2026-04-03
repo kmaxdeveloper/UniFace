@@ -32,6 +32,11 @@ class SecurityConfig(
             // 1. CORS har doim birinchi bo'lishi shart!
             .cors { it.configurationSource(corsConfigurationSource()) }
             .csrf { it.disable() }
+
+            .headers { headers ->
+                headers.frameOptions { it.sameOrigin() }
+            }
+
             .sessionManagement {
                 it.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             }
