@@ -2,10 +2,13 @@ package com.uniface.controller
 
 import com.uniface.dto.StartLessonRequest
 import com.uniface.entity.Lesson
+import com.uniface.entity.Subject
 import com.uniface.repository.SubjectRepository
+import com.uniface.repository.UserRepository
 import com.uniface.service.AttendanceService
 import com.uniface.service.FaceService
 import com.uniface.service.TeacherService
+import org.apache.tomcat.util.net.openssl.ciphers.Authentication
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -16,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.security.Principal
+import org.springframework.http.HttpStatus
 
 @RestController
 @RequestMapping("/api/v1/teacher")
@@ -23,7 +27,8 @@ class TeacherController(
     private val faceService: FaceService,
     private val teacherService: TeacherService,
     private val subjectRepository: SubjectRepository,
-    private val attendanceService: AttendanceService
+    private val attendanceService: AttendanceService,
+    private val userRepository: UserRepository
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -75,5 +80,20 @@ class TeacherController(
         val lessonId = attendanceService.startNewLesson(updatedRequest)
 
         return ResponseEntity.ok(lessonId)
+    }
+
+    @GetMapping("/get-subjects")
+    fun getSubjects(authentication: Authentication): ResponseEntity<List<Subject>> {
+        val username = authentication.name
+
+        // Userni topamiz
+        val teacher = userRepository.findByUsername(username)
+            ?: return ResponseEntity.status(HttpStatus.NOT_FOUND).build()
+
+        // XATO SHU YERDA EDI: teacher.id!! orqali biz uni Long (not-null) ga aylantiramiz
+        // Chunki biz yuqorida teacher null emasligini tekshirib oldik
+        val subjects = subjectRepository.findAllByTeacherId(teacher.id!!)
+
+        return ResponseEntity.ok(subjects)
     }
 }
