@@ -10,5 +10,5 @@ interface SubjectRepository : JpaRepository<Subject, Long> {
     fun findByCode(code: String): Subject?
     fun findAllByDepartmentId(deptId: Long): List<Subject>
     //fun findByTeacherId(teacherId : Long) : List<Subject>
-    fun findAllByTeacherId(teacherId: Long): List<Subject> // O'qituvchi ID bo'yicha topish
+//    fun findAllByTeacherId(teacherId: Long): List<Subject> // O'qituvchi ID bo'yicha topish
 }
