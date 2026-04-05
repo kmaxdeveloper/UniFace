@@ -9,10 +9,12 @@ import com.uniface.entity.matrix.Room
 import com.uniface.repository.*
 import com.uniface.repository.matrix.*
 import org.apache.poi.ss.usermodel.WorkbookFactory
+import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.multipart.MultipartFile
+import java.io.ByteArrayOutputStream
 
 @Service
 class AdminImportService(
@@ -254,5 +256,22 @@ class AdminImportService(
 
         departmentRepository.saveAll(deptsToSave)
         workbook.close()
+    }
+
+    fun generateMultiSheetTemplate(sheetHeaders: Map<String, List<String>>): ByteArray {
+        val workbook = XSSFWorkbook()
+
+        sheetHeaders.forEach { (sheetName, headers) ->
+            val sheet = workbook.createSheet(sheetName)
+            val headerRow = sheet.createRow(0)
+            headers.forEachIndexed { index, header ->
+                headerRow.createCell(index).setCellValue(header)
+            }
+        }
+
+        val out = ByteArrayOutputStream()
+        workbook.write(out)
+        workbook.close()
+        return out.toByteArray()
     }
 }

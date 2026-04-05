@@ -1,6 +1,8 @@
 package com.uniface.controller
 
 import com.uniface.service.AdminImportService
+import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
@@ -45,6 +47,60 @@ class AdminImportController(private val importService: AdminImportService) {
     @PostMapping("/alloc")
     fun importAlloc(@RequestParam file: MultipartFile) = handle(file) {
         importService.importAllocations(file)
+    }
+
+    @GetMapping("/template/{type}")
+    fun getTemplate(@PathVariable type: String): ResponseEntity<ByteArray> {
+        val result = when (type) {
+            // 1. Organization: Sheet 0 -> Faculties, Sheet 1 -> Departments
+            "org" -> {
+                val headers = mapOf(
+                    "Faculties" to listOf("Faculty Name"),
+                    "Departments" to listOf("Dept Name", "Faculty Name")
+                )
+                importService.generateMultiSheetTemplate(headers) to "org_template.xlsx"
+            }
+
+            // 2. Infrastructure: Sheet 0 -> Buildings, Sheet 1 -> Rooms
+            "infra" -> {
+                val headers = mapOf(
+                    "Buildings" to listOf("Building Name"),
+                    "Rooms" to listOf("Room Name", "Capacity", "Type (LECTURE/PRACTICE)", "Building Name")
+                )
+                importService.generateMultiSheetTemplate(headers) to "infra_template.xlsx"
+            }
+
+            // 3. Subjects: Sening importSubjects() koding bo'yicha
+            "sub" -> {
+                val headers = mapOf("Subjects" to listOf("Name", "Code", "Lecture Hours", "Practice Hours"))
+                importService.generateMultiSheetTemplate(headers) to "sub_template.xlsx"
+            }
+
+            // 4. Teachers: Sening importTeachers() koding bo'yicha
+            "teach" -> {
+                val headers = mapOf("Teachers" to listOf("Full Name", "Username", "Email"))
+                importService.generateMultiSheetTemplate(headers) to "teach_template.xlsx"
+            }
+
+            // 5. Students: Sening importStudents() koding bo'yicha
+            "stud" -> {
+                val headers = mapOf("Students" to listOf("Full Name", "Student ID", "Group Name"))
+                importService.generateMultiSheetTemplate(headers) to "stud_template.xlsx"
+            }
+
+            // 6. Allocations: SubjectAllocation entityingga mos
+            "alloc" -> {
+                val headers = mapOf("Allocations" to listOf("Teacher Username", "Subject Code", "Group Name", "Patok Name"))
+                importService.generateMultiSheetTemplate(headers) to "alloc_template.xlsx"
+            }
+
+            else -> throw IllegalArgumentException("Tur topilmadi!")
+        }
+
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${result.second}")
+            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .body(result.first)
     }
 
     private fun handle(file: MultipartFile, action: () -> Unit): ResponseEntity<Map<String, String>> {
