@@ -1,5 +1,6 @@
 package com.uniface.repository
 
+import com.uniface.entity.Subject
 import com.uniface.entity.Teacher
 import com.uniface.entity.User
 import org.springframework.data.jpa.repository.JpaRepository

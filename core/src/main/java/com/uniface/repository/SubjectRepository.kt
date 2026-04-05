@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository
 interface SubjectRepository : JpaRepository<Subject, Long> {
     fun findByName(name: String): Subject?
     fun findByCode(code: String): Subject?
+    fun findAllByCodeIn(codes: List<String>): List<Subject>
     fun findAllByDepartmentId(deptId: Long): List<Subject>
     //fun findByTeacherId(teacherId : Long) : List<Subject>
 //    fun findAllByTeacherId(teacherId: Long): List<Subject> // O'qituvchi ID bo'yicha topish

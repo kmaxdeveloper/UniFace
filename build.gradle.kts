@@ -60,8 +60,10 @@ dependencies {
     // build.gradle.kts (Kotlin bo'lsa)
     testImplementation("com.h2database:h2")
 
-// yoki build.gradle (Groovy bo'lsa)
+    // yoki build.gradle (Groovy bo'lsa)
     testImplementation("com.h2database:h2")
+    // Excel (.xlsx) fayllarni o'qish uchun
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
 }
 
 tasks.test {
