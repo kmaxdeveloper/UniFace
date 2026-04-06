@@ -3,6 +3,7 @@ package com.uniface.service
 import com.uniface.data.Role
 import com.uniface.dto.FaceResponse
 import com.uniface.entity.Attendance
+import com.uniface.entity.Student
 import com.uniface.entity.User
 import com.uniface.repository.AttendanceRepository
 import com.uniface.repository.StudentGroupRepository
@@ -292,5 +293,18 @@ class FaceService(
         } catch (e: Exception) {
             throw RuntimeException("O'chirishda xatolik: ${e.message}")
         }
+    }
+
+    fun getStudents(groupId: Long?): List<Student> {
+        return if (groupId != null) {
+            studentRepository.findAllByGroupId(groupId)
+        } else {
+            studentRepository.findAll()
+        }
+    }
+
+    // Manual saqlash uchun (agar kerak bo'lsa)
+    fun manualSave(student: Student): Student {
+        return studentRepository.save(student)
     }
 }

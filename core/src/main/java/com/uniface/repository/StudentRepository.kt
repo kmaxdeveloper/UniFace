@@ -23,4 +23,5 @@ import org.springframework.stereotype.Repository
 
     // Guruh nomi bo'yicha qidirish (Admin paneli uchun foydali)
     fun findAllByGroupName(groupName: String): List<Student>
+    fun findAllByGroupId(groupId: Long): List<Student>
 }

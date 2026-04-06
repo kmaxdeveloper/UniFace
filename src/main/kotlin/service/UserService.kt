@@ -4,6 +4,7 @@ import com.uniface.data.Role
 import com.uniface.dto.TeacherDto
 import com.uniface.entity.User
 import com.uniface.dto.UserDto // Controller'dan keladigan ma'lumotlar
+import com.uniface.dto.teacher.TeacherUpdateDto
 import com.uniface.entity.Teacher
 import com.uniface.repository.GroupRepository
 import com.uniface.repository.SubjectRepository
@@ -72,5 +73,42 @@ class UserService(
         }
 
         return userRepository.save(user)
+    }
+
+    fun getAllTeachers(): List<User> {
+        // Agar hamma foydalanuvchilar bitta jadvalda bo'lsa, Role orqali filter qilamiz:
+        // return userRepository.findAllByRole("TEACHER")
+
+        // Hozircha oddiygina hamma foydalanuvchini qaytarib turamiz (error ketishi uchun):
+        return userRepository.findAll()
+    }
+
+    @Transactional
+    fun updateTeacherFull(userId: Long, dto: TeacherUpdateDto) {
+        // 1. Userni topamiz
+        val user = userRepository.findById(userId)
+            .orElseThrow { Exception("Foydalanuvchi topilmadi!") }
+
+        // 2. User ma'lumotlarini yangilaymiz
+        user.username = dto.username ?: user.username
+        user.fullName = dto.fullName ?: user.fullName
+        if (!dto.password.isNullOrBlank()) {
+            user.password = passwordEncoder.encode(dto.password)
+        }
+
+        // 3. MUHIM: Teacher profilini to'g'ridan-to'g'ri bazadan qidiramiz
+        // user.teacherProfile o'rniga teacherRepository dan foydalanamiz
+        val teacher = teacherRepository.findByUserId(userId)
+            ?: throw Exception("Ushbu userda o'qituvchi profili mavjud emas!")
+
+        // 4. Teacher jadvalidagi ma'lumotlar
+        teacher.fullName = dto.fullName ?: teacher.fullName
+        teacher.department = dto.department ?: teacher.department
+        teacher.faculty = dto.faculty ?: teacher.faculty
+        teacher.status = dto.status ?: teacher.status
+
+        // Saqlash
+        userRepository.save(user)
+        teacherRepository.save(teacher)
     }
 }

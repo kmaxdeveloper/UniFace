@@ -1,11 +1,16 @@
 package com.uniface.controller
 
+import com.uniface.data.LessonType
 import com.uniface.dto.TeacherDto
 import com.uniface.dto.UserDto
+import com.uniface.dto.teacher.TeacherUpdateDto
+import com.uniface.entity.Student
 import com.uniface.entity.StudentGroup
 import com.uniface.entity.Subject
+import com.uniface.entity.matrix.Building
 import com.uniface.entity.matrix.Department
 import com.uniface.entity.matrix.Faculty
+import com.uniface.entity.matrix.Room
 import com.uniface.repository.StudentGroupRepository
 import com.uniface.repository.SubjectRepository
 import com.uniface.repository.matrix.DepartmentRepository
@@ -20,7 +25,7 @@ import org.springframework.web.multipart.MultipartFile
 @RestController
 @RequestMapping("/api/v1/admin")
 class AdminController(
-    private val faceService: FaceService,
+    private val studentService: FaceService,
     private val userService: UserService, // ✅ UserService qo'shildi
     private val subjectRepo: SubjectRepository,
     private val groupRepo: StudentGroupRepository,
@@ -65,12 +70,20 @@ class AdminController(
         @RequestParam("image") file: MultipartFile
     ): ResponseEntity<*> {
         return try {
-            val response = faceService.registerFace(id, fullName, groupId, file.bytes)
+            val response = studentService.registerFace(id, fullName, groupId, file.bytes)
             ResponseEntity.ok(response)
         } catch (e: Exception) {
             ResponseEntity.badRequest().body(e.message)
         }
     }
+
+    // --- TALABALAR RO'YXATINI OLISH ---
+    @GetMapping("/get-students")
+    fun getStudents(@RequestParam(required = false) groupId: Long?): ResponseEntity<List<Student>> {
+        val students = studentService.getStudents(groupId)
+        return ResponseEntity.ok(students)
+    }
+
     //======================================================================================
 
     // --- 4. USTOZLARNI BOSHQARISH ---
@@ -85,12 +98,13 @@ class AdminController(
     }
 
     @PutMapping("/update-teacher/{id}")
-    fun updateTeacher(@PathVariable id: Long, @RequestBody request: UserDto): ResponseEntity<String> {
+    fun updateTeacher(@PathVariable id: Long, @RequestBody request: TeacherUpdateDto): ResponseEntity<String> {
         return try {
-            userService.updateUser(id, request)
-            ResponseEntity.ok("Ma'lumotlar yangilandi!")
+            // Funksiya nomini Service'dagi bilan bir xil qilamiz: updateTeacherFull
+            userService.updateTeacherFull(id, request)
+            ResponseEntity.ok("O'qituvchi ma'lumotlari muvaffaqiyatli yangilandi!")
         } catch (e: Exception) {
-            ResponseEntity.badRequest().body(e.message)
+            ResponseEntity.badRequest().body("Yangilashda xato: ${e.message}")
         }
     }
 
@@ -112,4 +126,46 @@ class AdminController(
         }
         return ResponseEntity.ok(list)
     }
+
+    // --- BINOLAR ---
+    @PostMapping("/add-building")
+    fun addBuilding(@RequestBody building: Building): ResponseEntity<Building> {
+        return ResponseEntity.ok(adminService.saveBuilding(building))
+    }
+
+    @GetMapping("/get-buildings")
+    fun getBuildings(): ResponseEntity<List<Building>> {
+        return ResponseEntity.ok(adminService.getAllBuildings())
+    }
+
+    // --- XONALAR ---
+    @PostMapping("/add-room")
+    fun addRoom(@RequestBody room: Room): ResponseEntity<Room> {
+        return ResponseEntity.ok(adminService.saveRoom(room))
+    }
+
+    @GetMapping("/get-rooms")
+    fun getRooms(): ResponseEntity<List<Room>> {
+        return ResponseEntity.ok(adminService.getAllRooms())
+    }
+
+    @PostMapping("/add-lesson")
+    fun addLesson(
+        @RequestParam subjectId: Long,
+        @RequestParam teacherId: Long,
+        @RequestParam groupIds: List<Long>, // List sifatida qabul qilamiz
+        @RequestParam roomId: Long,
+        @RequestParam timeslotId: Long,
+        @RequestParam type: LessonType
+    ): ResponseEntity<String> {
+        return try {
+            adminService.createLesson(subjectId, teacherId, groupIds, roomId, timeslotId, type)
+            ResponseEntity.ok("Dars jadvalga (Patok bo'yicha) muvaffaqiyatli qo'shildi!")
+        } catch (e: Exception) {
+            ResponseEntity.badRequest().body("Xatolik: ${e.message}")
+        }
+    }
+
+    @GetMapping("/get-teachers")
+    fun getTeachers() = ResponseEntity.ok(userService.getAllTeachers())
 }
