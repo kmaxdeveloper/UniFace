@@ -31,6 +31,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import java.time.DayOfWeek
 
 @Service
 class ImportService(
@@ -241,7 +242,8 @@ class ImportService(
             val tUser = row.getCell(6)?.toString()?.trim() ?: ""
             val type = row.getCell(7)?.toString()?.trim()?.uppercase() ?: "PRACTICE"
 
-            val timeslot = timeslotRepository.findByDayOfWeekAndSlotNumber(day, slot) ?: continue
+            val dayEnum = DayOfWeek.of(day) // Int dan DayOfWeek enumga o'girish
+            val timeslot = timeslotRepository.findByDayOfWeekAndPairNumber(dayEnum, slot) ?: continue
             val bino = buildingRepository.findByName(bName) ?: continue
             val room = roomRepository.findByRoomNumberAndBuilding(rNo, bino) ?: continue
             val subject = subjectRepository.findByCode(sCode) ?: continue
