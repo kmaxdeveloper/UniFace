@@ -258,15 +258,31 @@ class AdminImportService(
         workbook.close()
     }
 
-    fun generateMultiSheetTemplate(sheetHeaders: Map<String, List<String>>): ByteArray {
+    fun generateSmartTemplate(
+        sheetHeaders: Map<String, List<String>>,
+        sampleData: Map<String, List<List<String>>> = emptyMap()
+    ): ByteArray {
         val workbook = XSSFWorkbook()
 
         sheetHeaders.forEach { (sheetName, headers) ->
             val sheet = workbook.createSheet(sheetName)
+
+            // 1. Header qatori (Bold va chiroyli qilish ixtiyoriy, lekin tartib muhim)
             val headerRow = sheet.createRow(0)
             headers.forEachIndexed { index, header ->
                 headerRow.createCell(index).setCellValue(header)
             }
+
+            // 2. Namuna ma'lumotlarini qo'shish (Admin qayerga nima yozishni ko'rsin)
+            sampleData[sheetName]?.forEachIndexed { rowIndex, dataList ->
+                val row = sheet.createRow(rowIndex + 1)
+                dataList.forEachIndexed { colIndex, value ->
+                    row.createCell(colIndex).setCellValue(value)
+                }
+            }
+
+            // Ustunlar kengligini avtomat moslash
+            headers.indices.forEach { sheet.autoSizeColumn(it) }
         }
 
         val out = ByteArrayOutputStream()

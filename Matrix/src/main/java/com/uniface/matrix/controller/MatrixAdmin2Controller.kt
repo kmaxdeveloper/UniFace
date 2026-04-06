@@ -1,6 +1,6 @@
 package com.uniface.matrix.controller
 
-import com.uniface.matrix.service.MatrixService
+import com.uniface.matrix.service.MatrixService2
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity
 @RestController
 @RequestMapping("/api/matrix")
 class MatrixAdmin2Controller(
-    private val matrixService: MatrixService
+    private val matrixService: MatrixService2
 ) {
 
     @PostMapping("/solve")

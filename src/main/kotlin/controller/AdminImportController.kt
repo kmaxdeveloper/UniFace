@@ -54,52 +54,64 @@ class AdminImportController(private val importService: AdminImportService) {
         val result = when (type) {
             // 1. Organization: Sheet 0 -> Faculties, Sheet 1 -> Departments
             "org" -> {
-                val headers = mapOf(
+                val sheets = mapOf(
                     "Faculties" to listOf("Faculty Name"),
                     "Departments" to listOf("Dept Name", "Faculty Name")
                 )
-                importService.generateMultiSheetTemplate(headers) to "org_template.xlsx"
+                val samples = mapOf(
+                    "Faculties" to listOf(listOf("Kompyuter Injiniringi")),
+                    "Departments" to listOf(listOf("Dasturiy injiniring", "Kompyuter Injiniringi"))
+                )
+                importService.generateSmartTemplate(sheets, samples) to "org_template.xlsx"
             }
 
             // 2. Infrastructure: Sheet 0 -> Buildings, Sheet 1 -> Rooms
             "infra" -> {
-                val headers = mapOf(
-                    "Buildings" to listOf("Building Name"),
-                    "Rooms" to listOf("Room Name", "Capacity", "Type (LECTURE/PRACTICE)", "Building Name")
+                val sheets = mapOf(
+                    "Buildings" to listOf("Building Name", "Floors"),
+                    "Rooms" to listOf("Room Number", "Capacity", "Is Laboratory (TRUE/FALSE)", "Building Name")
                 )
-                importService.generateMultiSheetTemplate(headers) to "infra_template.xlsx"
+                val samples = mapOf(
+                    "Buildings" to listOf(listOf("A-Bino", "4")),
+                    "Rooms" to listOf(listOf("101", "30", "FALSE", "A-Bino"), listOf("202", "15", "TRUE", "A-Bino"))
+                )
+                importService.generateSmartTemplate(sheets, samples) to "infra_template.xlsx"
             }
 
-            // 3. Subjects: Sening importSubjects() koding bo'yicha
+            // 3. Subjects: Name, Code, Lecture, Lab (Kodingdagi importSubjects ga mos)
             "sub" -> {
-                val headers = mapOf("Subjects" to listOf("Name", "Code", "Lecture Hours", "Practice Hours"))
-                importService.generateMultiSheetTemplate(headers) to "sub_template.xlsx"
+                val sheets = mapOf("Subjects" to listOf("Code", "Name", "Lecture Hours", "Laboratory Hours"))
+                val samples = mapOf("Subjects" to listOf(listOf("CSE101", "Ma'lumotlar Strukturasi", "36", "18")))
+                importService.generateSmartTemplate(sheets, samples) to "sub_template.xlsx"
             }
 
-            // 4. Teachers: Sening importTeachers() koding bo'yicha
+            // 4. Teachers: Full Name, Username, Subjects (split by comma)
             "teach" -> {
-                val headers = mapOf("Teachers" to listOf("Full Name", "Username", "Email"))
-                importService.generateMultiSheetTemplate(headers) to "teach_template.xlsx"
+                val sheets = mapOf("Teachers" to listOf("Full Name", "Username", "Subject Codes (Comma separated)"))
+                val samples = mapOf("Teachers" to listOf(listOf("Eshmatov Toshmat", "toshmat_e", "CSE101, MAT202")))
+                importService.generateSmartTemplate(sheets, samples) to "teachers_template.xlsx"
             }
 
-            // 5. Students: Sening importStudents() koding bo'yicha
+            // 5. Students: Student ID, Full Name, Face ID, Group Name
             "stud" -> {
-                val headers = mapOf("Students" to listOf("Full Name", "Student ID", "Group Name"))
-                importService.generateMultiSheetTemplate(headers) to "stud_template.xlsx"
+                val sheets = mapOf("Students" to listOf("Student ID", "Full Name", "Face ID", "Group Name"))
+                val samples = mapOf("Students" to listOf(listOf("210-22", "Ali Valiyev", "FACE_21022", "611-21")))
+                importService.generateSmartTemplate(sheets, samples) to "students_template.xlsx"
             }
 
-            // 6. Allocations: SubjectAllocation entityingga mos
+            // 6. Allocations: Teacher Username, Subject Code, Group, Patok
             "alloc" -> {
-                val headers = mapOf("Allocations" to listOf("Teacher Username", "Subject Code", "Group Name", "Patok Name"))
-                importService.generateMultiSheetTemplate(headers) to "alloc_template.xlsx"
+                val sheets = mapOf("Allocations" to listOf("Teacher Username", "Subject Code", "Group Name", "Patok Name"))
+                val samples = mapOf("Allocations" to listOf(listOf("toshmat_e", "CSE101", "611-21", "")))
+                importService.generateSmartTemplate(sheets, samples) to "alloc_template.xlsx"
             }
 
             else -> throw IllegalArgumentException("Tur topilmadi!")
         }
 
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${result.second}")
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${result.second}\"")
+            .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
             .body(result.first)
     }
 
