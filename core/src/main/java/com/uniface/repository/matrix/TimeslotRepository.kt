@@ -5,4 +5,8 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
 
 @Repository
-interface TimeslotRepository : JpaRepository<TimeSlot, Long>
+interface TimeslotRepository : JpaRepository<TimeSlot, Long> {
+
+    // Kun va soat raqami bo'yicha TimeSlot'ni topish
+    fun findByDayOfWeekAndSlotNumber(dayOfWeek: Int, slotNumber: Int): TimeSlot?
+}

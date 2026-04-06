@@ -5,30 +5,22 @@ import jakarta.persistence.*
 
 @Entity
 @Table(name = "students")
-class Student() {
+class Student(
     @Id
     @Column(name = "student_id")
-    var studentId: String = ""
+    var studentId: String = "",
 
-    var fullName: String = ""
+    var fullName: String = "",
 
     @Column(unique = true)
-    var faceId: String = ""
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id") // Login tizimi bilan ulanish
-    @JsonBackReference
-    var user: User? = null
+    var faceId: String = "",
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
-    var group: StudentGroup? = null
+    var group: StudentGroup? = null,
 
-    constructor(studentId: String, fullName: String, faceId: String, group: StudentGroup?, user: User?) : this() {
-        this.studentId = studentId
-        this.fullName = fullName
-        this.faceId = faceId
-        this.group = group
-        this.user = user
-    }
-}
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    @JsonBackReference
+    var user: User? = null // Default null qildik
+)

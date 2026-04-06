@@ -1,6 +1,7 @@
 package com.uniface.controller
 
 import com.uniface.service.AdminImportService
+import com.uniface.service.matrix.ImportService
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -9,121 +10,95 @@ import org.springframework.web.multipart.MultipartFile
 
 @RestController
 @RequestMapping("/api/v1/admin/import")
-class AdminImportController(private val importService: AdminImportService) {
+class AdminImportController(private val importService: ImportService) {
 
-    // Tashkiliy tuzilma (Fakultet va Kafedra)
-    @PostMapping("/org")
-    fun importOrg(@RequestParam file: MultipartFile) = handle(file) {
-        importService.importOrgStructure(file)
+    // 1. Fakultetlar (Alohida)
+    @PostMapping("/faculties")
+    fun importFaculties(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importFaculties(file)
     }
 
-    // Bino va Xonalar
-    @PostMapping("/infra")
-    fun importInfra(@RequestParam file: MultipartFile) = handle(file) {
-        importService.importInfrastructure(file)
+    // 2. Kafedralar (Alohida)
+    @PostMapping("/departments")
+    fun importDepartments(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importDepartments(file)
     }
 
-    // Fanlar
-    @PostMapping("/sub")
-    fun importSub(@RequestParam file: MultipartFile, @RequestParam deptId: Long) = handle(file) {
-        importService.importSubjects(file, deptId)
+    // 3. Binolar
+    @PostMapping("/buildings")
+    fun importBuildings(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importBuildings(file)
     }
 
-    // O'qituvchilar
-    @PostMapping("/teach")
-    fun importTeach(
-        @RequestParam file: MultipartFile,
-        @RequestParam faculty: String,
-        @RequestParam dept: String
-    ) = handle(file) { importService.importTeachers(file, faculty, dept) }
-
-    // Talabalar
-    @PostMapping("/stud")
-    fun importStud(@RequestParam file: MultipartFile, @RequestParam facultyId: Long) = handle(file) {
-        importService.importStudents(file, facultyId)
+    // 4. Xonalar (Building + Room logic)
+    @PostMapping("/rooms")
+    fun importRooms(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importRooms(file)
     }
 
-    // Kim-kimga dars o'tishi (Reja)
-    @PostMapping("/alloc")
+    // 5. Fanlar
+    @PostMapping("/subjects")
+    fun importSub(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importSubjects(file)
+    }
+
+    // 6. O'qituvchilar
+    @PostMapping("/teachers")
+    fun importTeach(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importTeachers(file)
+    }
+
+    // 7. Talabalar
+    @PostMapping("/students")
+    fun importStud(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importStudents(file)
+    }
+
+    // 8. Dars jadvali (TimeSlot, Potok va Room logic bilan)
+    @PostMapping("/lessons")
+    fun importLessons(@RequestParam file: MultipartFile) = handle(file) {
+        importService.importLessons(file)
+    }
+
+    // 9. Reja / Allocations
+    @PostMapping("/allocations")
     fun importAlloc(@RequestParam file: MultipartFile) = handle(file) {
         importService.importAllocations(file)
     }
 
+    // --- TEMPLATES ---
     @GetMapping("/template/{type}")
     fun getTemplate(@PathVariable type: String): ResponseEntity<ByteArray> {
         val result = when (type) {
-            // 1. Organization: Sheet 0 -> Faculties, Sheet 1 -> Departments
-            "org" -> {
-                val sheets = mapOf(
-                    "Faculties" to listOf("Faculty Name"),
-                    "Departments" to listOf("Dept Name", "Faculty Name")
-                )
-                val samples = mapOf(
-                    "Faculties" to listOf(listOf("Kompyuter Injiniringi")),
-                    "Departments" to listOf(listOf("Dasturiy injiniring", "Kompyuter Injiniringi"))
-                )
-                importService.generateSmartTemplate(sheets, samples) to "org_template.xlsx"
-            }
-
-            // 2. Infrastructure: Sheet 0 -> Buildings, Sheet 1 -> Rooms
-            "infra" -> {
-                val sheets = mapOf(
-                    "Buildings" to listOf("Building Name", "Floors"),
-                    "Rooms" to listOf("Room Number", "Capacity", "Is Laboratory (TRUE/FALSE)", "Building Name")
-                )
-                val samples = mapOf(
-                    "Buildings" to listOf(listOf("A-Bino", "4")),
-                    "Rooms" to listOf(listOf("101", "30", "FALSE", "A-Bino"), listOf("202", "15", "TRUE", "A-Bino"))
-                )
-                importService.generateSmartTemplate(sheets, samples) to "infra_template.xlsx"
-            }
-
-            // 3. Subjects: Name, Code, Lecture, Lab (Kodingdagi importSubjects ga mos)
-            "sub" -> {
-                val sheets = mapOf("Subjects" to listOf("Code", "Name", "Lecture Hours", "Laboratory Hours"))
-                val samples = mapOf("Subjects" to listOf(listOf("CSE101", "Ma'lumotlar Strukturasi", "36", "18")))
-                importService.generateSmartTemplate(sheets, samples) to "sub_template.xlsx"
-            }
-
-            // 4. Teachers: Full Name, Username, Subjects (split by comma)
-            "teach" -> {
-                val sheets = mapOf("Teachers" to listOf("Full Name", "Username", "Subject Codes (Comma separated)"))
-                val samples = mapOf("Teachers" to listOf(listOf("Eshmatov Toshmat", "toshmat_e", "CSE101, MAT202")))
-                importService.generateSmartTemplate(sheets, samples) to "teachers_template.xlsx"
-            }
-
-            // 5. Students: Student ID, Full Name, Face ID, Group Name
-            "stud" -> {
-                val sheets = mapOf("Students" to listOf("Student ID", "Full Name", "Face ID", "Group Name"))
-                val samples = mapOf("Students" to listOf(listOf("210-22", "Ali Valiyev", "FACE_21022", "611-21")))
-                importService.generateSmartTemplate(sheets, samples) to "students_template.xlsx"
-            }
-
-            // 6. Allocations: Teacher Username, Subject Code, Group, Patok
-            "alloc" -> {
-                val sheets = mapOf("Allocations" to listOf("Teacher Username", "Subject Code", "Group Name", "Patok Name"))
-                val samples = mapOf("Allocations" to listOf(listOf("toshmat_e", "CSE101", "611-21", "")))
-                importService.generateSmartTemplate(sheets, samples) to "alloc_template.xlsx"
-            }
-
+            "faculties" -> mapOf("Faculties" to listOf("Faculty Name")) to mapOf("Faculties" to listOf(listOf("KIF")))
+            "departments" -> mapOf("Departments" to listOf("Dept Name", "Faculty Name")) to mapOf("Departments" to listOf(listOf("Dasturiy injiniring", "KIF")))
+            "buildings" -> mapOf("Buildings" to listOf("Building Name", "Floors")) to mapOf("Buildings" to listOf(listOf("A-Bino", "4")))
+            "rooms" -> mapOf("Rooms" to listOf("Room Number", "Capacity", "Type (LAB/LEC)", "Building Name")) to mapOf("Rooms" to listOf(listOf("101", "30", "LEC", "A-Bino")))
+            "subjects" -> mapOf("Subjects" to listOf("Code", "Name", "Lecture Hours", "Lab Hours", "Dept Name")) to mapOf("Subjects" to listOf(listOf("CSE101", "Algorithm", "36", "18", "Dasturiy injiniring")))
+            "teachers" -> mapOf("Teachers" to listOf("Full Name", "Username", "Email", "Dept", "Faculty")) to mapOf("Teachers" to listOf(listOf("Ali Valiyev", "ali_v", "ali@tatu.uz", "DI", "KIF")))
+            "students" -> mapOf("Students" to listOf("Student ID", "Full Name", "Face ID", "Group Name")) to mapOf("Students" to listOf(listOf("210-22", "Vali Aliyev", "FACE_22", "611-21")))
+            "lessons" -> mapOf("Lessons" to listOf("Day(1-6)", "Slot(1-7)", "SubCode", "Room", "Building", "Groups", "TeacherUser", "Type")) to mapOf("Lessons" to listOf(listOf("1", "1", "CSE101", "101", "A-Bino", "611-21, 612-21", "ali_v", "LECTURE")))
+            "allocations" -> mapOf("Allocations" to listOf("Teacher Username", "Subject Code", "Group Name")) to mapOf("Allocations" to listOf(listOf("ali_v", "CSE101", "611-21")))
             else -> throw IllegalArgumentException("Tur topilmadi!")
         }
 
+        // Eslab qol error berishi mumkin !
+        val template = importService.generateSmartTemplate(result.first, result.second)
+
         return ResponseEntity.ok()
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${result.second}\"")
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"${type}_template.xlsx\"")
             .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
-            .body(result.first)
+            .body(template)
     }
 
-    private fun handle(file: MultipartFile, action: () -> Unit): ResponseEntity<Map<String, String>> {
+    // --- HELPERS ---
+    private fun handle(file: MultipartFile, action: () -> String): ResponseEntity<Map<String, String>> {
         return try {
-            // 1. Birinchi navbatda faylni tekshiramiz
             validate(file)
-            // 2. Hammasi OK bo'lsa, servisni ishga tushiramiz
-            action()
-            ResponseEntity.ok(mapOf("msg" to "OK"))
+            val message = action()
+            ResponseEntity.ok(mapOf("msg" to message))
         } catch (e: Exception) {
-            ResponseEntity.badRequest().body(mapOf("err" to (e.message ?: "Error")))
+            ResponseEntity.badRequest().body(mapOf("err" to (e.message ?: "Noma'lum xatolik")))
         }
     }
 
