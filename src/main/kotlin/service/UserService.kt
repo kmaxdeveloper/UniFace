@@ -75,12 +75,9 @@ class UserService(
         return userRepository.save(user)
     }
 
-    fun getAllTeachers(): List<User> {
-        // Agar hamma foydalanuvchilar bitta jadvalda bo'lsa, Role orqali filter qilamiz:
-        // return userRepository.findAllByRole("TEACHER")
-
-        // Hozircha oddiygina hamma foydalanuvchini qaytarib turamiz (error ketishi uchun):
-        return userRepository.findAll()
+    fun getAllTeachers(): List<Teacher> {
+        // Faqat ustozlar jadvalidagilarni qaytaramiz
+        return teacherRepository.findAll()
     }
 
     @Transactional

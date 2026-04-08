@@ -1,6 +1,7 @@
 package com.uniface.entity
 
 import com.fasterxml.jackson.annotation.JsonBackReference
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.*
 
 @Entity
@@ -14,6 +15,7 @@ class Teacher(
 
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties("teacherProfile", "studentProfile", "password")
     var user: User,                 // 3. Login/Parol (User jadvali)
 
     var department: String = "",    // 7. Kafedra

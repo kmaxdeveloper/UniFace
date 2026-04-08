@@ -1,5 +1,6 @@
 package com.uniface.repository
 
+import com.uniface.data.Role
 import com.uniface.entity.User
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.stereotype.Repository
@@ -12,4 +13,5 @@ interface UserRepository : JpaRepository<User, Long> {
 
     // Admin ustoz qo'shganda dublikat bo'lmasligi uchun
     fun existsByUsername(username: String): Boolean
+    fun findAllByRole(role: Role): List<User>
 }
