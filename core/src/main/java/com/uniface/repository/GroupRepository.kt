@@ -18,4 +18,6 @@ interface GroupRepository : JpaRepository<StudentGroup, Long> {
     fun findAllByTeacherId(teacherId: Long): List<StudentGroup>
 
     fun existsByName(name: String): Boolean
+
+    fun findAllByFacultyId(facultyId: Long): List<StudentGroup>
 }

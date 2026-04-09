@@ -28,4 +28,7 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
 
     // 6. Avtomatik yopish (Cleanup task) uchun: 2 soatdan beri ochiq qolib ketgan darslarni topish
     fun findAllByIsActiveTrueAndStartTimeBefore(time: LocalDateTime): List<Lesson>
+
+    fun findAllByGroupsId(groupId: Long): List<Lesson>
+    fun existsByRoomIdAndTimeslotId(roomId: Long, timeslotId: Long): Boolean
 }

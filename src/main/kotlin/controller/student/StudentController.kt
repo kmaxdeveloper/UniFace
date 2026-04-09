@@ -1,4 +1,4 @@
-package com.uniface.controller
+package com.uniface.controller.student
 
 import com.uniface.repository.AttendanceRepository
 import org.springframework.http.ResponseEntity

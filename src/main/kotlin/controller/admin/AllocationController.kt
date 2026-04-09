@@ -1,4 +1,4 @@
-package com.uniface.controller
+package com.uniface.controller.admin
 
 import com.uniface.service.SubjectAllocationService
 import org.springframework.http.ResponseEntity

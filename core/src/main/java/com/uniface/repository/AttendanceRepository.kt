@@ -64,4 +64,18 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
     // 2. Yoki aniqroq ID-lar bo'yicha tekshirish (Service-da qulayroq bo'lishi mumkin)
     fun existsByStudentStudentIdAndLessonId(studentId: String, lessonId: Long): Boolean
+
+    fun countByDateAndIsPresentTrue(date: java.time.LocalDate): Long
+
+    // Native Query orqali eng ko'p kelmaganlarni topish
+    @Query(value = """
+        SELECT s.full_name, COUNT(a.id) as absent_count 
+        FROM attendance a 
+        JOIN students s ON a.student_id = s.id 
+        WHERE a.is_present = false 
+        GROUP BY s.id 
+        ORDER BY absent_count DESC 
+        LIMIT :limit
+    """, nativeQuery = true)
+    fun findTopAbsentStudents(limit: Int): List<Any>
 }

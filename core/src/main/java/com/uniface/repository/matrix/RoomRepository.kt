@@ -12,4 +12,6 @@ interface RoomRepository : JpaRepository<Room, Long> {
 
     fun findAllByBuildingName(buildingName: String): List<Room>
     fun findByRoomNumber(roomNumber: String): Room?
+
+    fun findAllByBuildingId(buildingId: Long): List<Room>
 }

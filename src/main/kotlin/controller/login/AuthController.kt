@@ -1,4 +1,4 @@
-package com.uniface.controller
+package com.uniface.controller.login
 
 import com.uniface.dto.LoginRequest
 import com.uniface.service.AuthService

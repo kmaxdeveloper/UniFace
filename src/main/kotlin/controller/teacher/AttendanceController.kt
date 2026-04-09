@@ -1,16 +1,20 @@
-package com.uniface.controller
+package com.uniface.controller.teacher
 
-import com.uniface.dto.AttendanceRecordDto
 import com.uniface.dto.StartLessonRequest
 import com.uniface.entity.ScanRequest
 import com.uniface.repository.LessonRepository
 import com.uniface.service.AttendanceService
-import com.uniface.service.QrService // Yangi servis
+import com.uniface.service.QrService
 import jakarta.persistence.EntityNotFoundException
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
-import org.springframework.messaging.simp.SimpMessagingTemplate // WebSocket uchun
-import org.springframework.web.bind.annotation.*
+import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @RequestMapping("/api/v1")
