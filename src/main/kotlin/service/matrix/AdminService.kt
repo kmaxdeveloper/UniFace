@@ -259,14 +259,18 @@ class AdminService(
     // 2. BUGUNGI UMUMIY DAVOMAT STATISTIKASI (Admin Dashboard uchun)
     fun getTodayAttendanceStats(): Map<String, Any> {
         val totalStudents = studentRepository.count()
-        // Bugungi sanadagi davomatlarni sanaymiz (AttendanceRepository kerak bo'ladi)
-        val presentCount = attendanceRepository.countByDateAndIsPresentTrue(java.time.LocalDate.now())
+
+        // Bugun 00:00 dan 23:59 gacha bo'lgan vaqt oralig'i
+        val startOfDay = java.time.LocalDate.now().atStartOfDay()
+        val endOfDay = java.time.LocalDate.now().atTime(23, 59, 59)
+
+        val presentCount = attendanceRepository.countPresentToday(startOfDay, endOfDay)
 
         return mapOf(
             "total" to totalStudents,
             "present" to presentCount,
             "absent" to (totalStudents - presentCount),
-            "percentage" to if (totalStudents > 0) (presentCount * 100 / totalStudents) else 0
+            "percentage" to if (totalStudents > 0L) (presentCount * 100 / totalStudents) else 0
         )
     }
 

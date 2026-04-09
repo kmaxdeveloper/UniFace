@@ -67,15 +67,27 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
 
     fun countByDateAndIsPresentTrue(date: java.time.LocalDate): Long
 
-    // Native Query orqali eng ko'p kelmaganlarni topish
+    // 1. Bugungi davomatni sanash (date o'rniga timestamp va start/end ishlatamiz)
+    @Query("""
+        SELECT COUNT(a) FROM Attendance a 
+        WHERE a.timestamp >= :start 
+        AND a.timestamp <= :end 
+        AND a.status = 'PRESENT'
+    """)
+    fun countPresentToday(
+        @Param("start") start: LocalDateTime,
+        @Param("end") end: LocalDateTime
+    ): Long
+
+    // 2. Qora ro'yxat (status = 'ABSENT' yoki 'PRESENT' bo'lmaganlar bo'yicha)
     @Query(value = """
         SELECT s.full_name, COUNT(a.id) as absent_count 
         FROM attendance a 
-        JOIN students s ON a.student_id = s.id 
-        WHERE a.is_present = false 
-        GROUP BY s.id 
+        JOIN students s ON a.student_id = s.student_id 
+        WHERE a.status = 'ABSENT' 
+        GROUP BY s.student_id, s.full_name 
         ORDER BY absent_count DESC 
         LIMIT :limit
     """, nativeQuery = true)
-    fun findTopAbsentStudents(limit: Int): List<Any>
+    fun findTopAbsentStudents(@Param("limit") limit: Int): List<Any>
 }
