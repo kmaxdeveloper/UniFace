@@ -65,8 +65,6 @@ interface AttendanceRepository : JpaRepository<Attendance, Long> {
     // 2. Yoki aniqroq ID-lar bo'yicha tekshirish (Service-da qulayroq bo'lishi mumkin)
     fun existsByStudentStudentIdAndLessonId(studentId: String, lessonId: Long): Boolean
 
-    fun countByDateAndIsPresentTrue(date: java.time.LocalDate): Long
-
     // 1. Bugungi davomatni sanash (date o'rniga timestamp va start/end ishlatamiz)
     @Query("""
         SELECT COUNT(a) FROM Attendance a 
