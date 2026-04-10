@@ -1,6 +1,7 @@
 package com.uniface.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 
 @Entity
@@ -12,6 +13,6 @@ class Patok(
     var name: String,
 
     @OneToMany(mappedBy = "patok", fetch = FetchType.LAZY)
-    @JsonIgnore
+    @JsonManagedReference
     var groups: MutableList<StudentGroup> = mutableListOf()
 )
