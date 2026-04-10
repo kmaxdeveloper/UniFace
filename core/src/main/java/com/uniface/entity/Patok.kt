@@ -1,6 +1,7 @@
 package com.uniface.entity
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonManagedReference
 import jakarta.persistence.*
 
@@ -12,7 +13,7 @@ class Patok(
 
     var name: String,
 
-    @OneToMany(mappedBy = "patok", fetch = FetchType.LAZY)
-    @JsonManagedReference
+    @OneToMany(mappedBy = "patok", fetch = FetchType.EAGER) // EAGER qilishni unutma, aks holda bo'sh kelishi mumkin
+    @JsonIgnoreProperties("patok")
     var groups: MutableList<StudentGroup> = mutableListOf()
 )

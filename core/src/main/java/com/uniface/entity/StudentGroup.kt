@@ -1,6 +1,8 @@
 package com.uniface.entity
 
+import com.fasterxml.jackson.annotation.JsonBackReference
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.uniface.entity.matrix.Faculty
 import jakarta.persistence.*
 
@@ -30,6 +32,7 @@ class StudentGroup() {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "patok_id")
+    @JsonIgnoreProperties("groups")
     var patok: Patok? = null
 
     constructor(name: String = "", studentCount: Int = 0, faculty: Faculty? = null) : this() {
