@@ -28,6 +28,10 @@ class StudentGroup() {
     @OneToMany(mappedBy = "group", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     var students: MutableList<Student> = mutableListOf()
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "patok_id")
+    var patok: Patok? = null
+
     constructor(name: String = "", studentCount: Int = 0, faculty: Faculty? = null) : this() {
         this.name = name
         this.studentCount = studentCount
