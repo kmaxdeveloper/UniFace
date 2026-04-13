@@ -17,9 +17,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/admin/curriculum")
 class CurriculumController(private val repository: CurriculumRepository) {
 
-    @GetMapping
-    fun getAll() = ResponseEntity.ok(repository.findAll())
-
     @PostMapping
     fun create(@RequestBody curriculum: Curriculum) =
         ResponseEntity.ok(repository.save(curriculum))
