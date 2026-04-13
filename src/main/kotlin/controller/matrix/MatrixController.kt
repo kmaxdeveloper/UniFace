@@ -1,59 +1,69 @@
 package com.uniface.controller.matrix
 
 import com.uniface.entity.Lesson
-import com.uniface.matrix.service.MatrixService2 // Service nomiga e'tibor ber
+import com.uniface.matrix.service.MatrixService
+import com.uniface.matrix.service.MatrixService2 // Yoki MatrixService
+import com.uniface.matrix.service.SubjectAllocationService2
 import com.uniface.repository.LessonRepository
+import com.uniface.repository.SubjectAllocationRepository
+import com.uniface.repository.SubjectRepository
+import com.uniface.service.SubjectAllocationService
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/admin/matrix")
 class MatrixController(
-    private val matrixService: MatrixService2,
-    private val lessonRepository: LessonRepository
+    private val matrixService: MatrixService,
+    private val lessonRepository: LessonRepository,
+    private val subjectRepository: SubjectAllocationService2
 ) {
 
+    // 2. ASOSIY GENERATSIYA (Zanjir: Allocation -> Solve -> Save)
     @PostMapping("/generate")
     fun generate(): ResponseEntity<Map<String, Any>> {
         return try {
-            // 1. Servisdagi generateAndSaveTimetable metodini chaqiramiz
-            val solution = matrixService.generateAndSaveTimetable()
+            // Birinchi o'qituvchilarni avtomatik taqsimlaymiz
+            subjectRepository.autoAllocateTeachers()
 
-            // 2. Score'ni tekshiramiz (agar juda yomon bo'lsa, xabar berish uchun)
-            val scoreStatus = solution.score?.toString() ?: "Noma'lum"
+            // Keyin AI jadvalni generatsiya qiladi
+            val solution = matrixService.runFullAutomation()
 
+            val score = solution.score
             ResponseEntity.ok(mapOf(
                 "msg" to "Matrix AI jadvalni muvaffaqiyatli generatsiya qildi!",
-                "count" to solution.lessons.size, // Jami joylashtirilgan darslar soni
-                "score" to scoreStatus,           // Hard/Soft score natijasi
+                "count" to solution.lessons.size,
+                "score" to score.toString(),
+                "is_feasible" to (score?.isFeasible ?: false),
                 "status" to "SUCCESS"
             ))
         } catch (e: Exception) {
-            // Logga xatolikni yozamiz (optional)
             e.printStackTrace()
-
             ResponseEntity.internalServerError().body(mapOf(
-                "err" to (e.message ?: "Algoritm ishga tushishida kutilmagan xatolik"),
-                "status" to "FAILED",
-                "hint" to "Bazada darslar (SubjectAllocation), xonalar yoki vaqtlar borligini tekshiring"
+                "err" to (e.message ?: "Algoritmda kutilmagan xatolik"),
+                "status" to "FAILED"
             ))
         }
     }
 
+    // 3. JADVALNI KO'RISH
     @GetMapping("/view")
     fun viewSchedule(
         @RequestParam(required = false) groupName: String?,
         @RequestParam(required = false) teacherId: Long?
     ): ResponseEntity<List<Lesson>> {
         val lessons = when {
-            groupName != null -> lessonRepository.findByGroups_Name(groupName)
+            !groupName.isNullOrBlank() -> lessonRepository.findByGroups_Name(groupName)
             teacherId != null -> lessonRepository.findByTeacher_Id(teacherId)
             else -> lessonRepository.findAll()
         }
         return ResponseEntity.ok(lessons)
+    }
+
+    // 4. TOZALASH
+    @DeleteMapping("/reset")
+    fun resetTimetable(): ResponseEntity<String> {
+        lessonRepository.deleteAll()
+        return ResponseEntity.ok("Dars jadvali tozalandi.")
     }
 }

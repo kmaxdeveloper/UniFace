@@ -1,6 +1,7 @@
 package com.uniface.service
 
 import com.uniface.entity.SubjectAllocation
+import com.uniface.repository.CurriculumRepository
 import com.uniface.repository.StudentGroupRepository
 import com.uniface.repository.SubjectAllocationRepository
 import com.uniface.repository.SubjectRepository
@@ -13,7 +14,8 @@ class SubjectAllocationService(
     private val allocationRepository: SubjectAllocationRepository,
     private val subjectRepository: SubjectRepository,
     private val teacherRepository: TeacherRepository,
-    private val groupRepository: StudentGroupRepository
+    private val groupRepository: StudentGroupRepository,
+    private val curriculumRepository: CurriculumRepository
 ) {
 
     @Transactional

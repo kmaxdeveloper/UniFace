@@ -3,6 +3,7 @@ package com.uniface.service.matrix
 import com.uniface.data.LessonType
 import com.uniface.data.Role
 import com.uniface.dto.matrix.UniversityDataImport
+import com.uniface.entity.Curriculum
 import com.uniface.entity.Lesson
 import com.uniface.entity.Student
 import com.uniface.entity.StudentGroup
@@ -14,6 +15,7 @@ import com.uniface.entity.matrix.Building
 import com.uniface.entity.matrix.Department
 import com.uniface.entity.matrix.Faculty
 import com.uniface.entity.matrix.Room
+import com.uniface.repository.CurriculumRepository
 import com.uniface.repository.GroupRepository
 import com.uniface.repository.LessonRepository
 import com.uniface.repository.StudentGroupRepository
@@ -47,7 +49,8 @@ class ImportService(
     private val studentRepository: StudentRepository,
     private val subjectAllocationRepository: SubjectAllocationRepository,
     private val lessonRepository: LessonRepository,
-    private val timeslotRepository: TimeslotRepository
+    private val timeslotRepository: TimeslotRepository,
+    private val curriculumRepository: CurriculumRepository
 ) {
 
     // --- 1. FACULTIES ---
@@ -362,5 +365,40 @@ class ImportService(
 
         workbook.close()
         return "$count ta biriktirish (allocation) muvaffaqiyatli bajarildi"
+    }
+
+    fun importCurriculum(file: MultipartFile) {
+        val workbook = WorkbookFactory.create(file.inputStream)
+        val sheet = workbook.getSheetAt(0) // Birinchi sahifani olamiz
+
+        val curriculums = mutableListOf<Curriculum>()
+
+        // 1-qatordan boshlaymiz (0-qator header bo'lsa)
+        for (i in 1..sheet.lastRowNum) {
+            val row = sheet.getRow(i) ?: continue
+
+            // Excel ustunlari tartibi:
+            // 0: Group Name, 1: Subject Name/Code, 2: Hours Per Week, 3: Semester
+            val groupName = row.getCell(0).stringCellValue
+            val subjectName = row.getCell(1).stringCellValue
+            val hours = row.getCell(2).numericCellValue.toInt()
+            val semester = row.getCell(3).numericCellValue.toInt()
+
+            val group = groupRepository.findByName(groupName)
+                ?: throw Exception("$groupName nomli guruh topilmadi!")
+
+            val subject = subjectRepository.findByName(subjectName)
+                ?: throw Exception("$subjectName nomli fan topilmadi!")
+
+            val curriculum = Curriculum().apply {
+                this.group = group
+                this.subject = subject
+                this.hoursPerWeek = hours
+                this.semester = semester
+            }
+            curriculums.add(curriculum)
+        }
+        curriculumRepository.saveAll(curriculums)
+        workbook.close()
     }
 }

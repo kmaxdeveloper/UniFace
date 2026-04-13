@@ -24,9 +24,11 @@ class SubjectAllocation() {
     var isPatok: Boolean = false // Agar bu butun patok uchun bo'lsa true
     var patokName: String? = null // Masalan: "940-21 Patok"
 
-    constructor(subject: Subject, teacher: Teacher, group: StudentGroup?) : this() {
+    // AllocationService-da qulay foydalanish uchun to'liq konstruktor
+    constructor(subject: Subject?, teacher: Teacher?, group: StudentGroup?, isPatok: Boolean = false) : this() {
         this.subject = subject
         this.teacher = teacher
         this.group = group
+        this.isPatok = isPatok
     }
 }

@@ -70,6 +70,16 @@ class AdminImportController(private val importService: ImportService) {
         importService.importAllocations(file)
     }
 
+    @PostMapping("/import-excel")
+    fun importExcel(@RequestParam("file") file: MultipartFile): ResponseEntity<String> {
+        return try {
+            importService.importCurriculum(file)
+            ResponseEntity.ok("Excel muvaffaqiyatli yuklandi va sillabus shakllantirildi!")
+        } catch (e: Exception) {
+            ResponseEntity.internalServerError().body("Xatolik: ${e.message}")
+        }
+    }
+
     // --- TEMPLATES ---
     @GetMapping("/template/{type}")
     fun getTemplate(@PathVariable type: String): ResponseEntity<ByteArray> {
@@ -83,6 +93,8 @@ class AdminImportController(private val importService: ImportService) {
             "students" -> mapOf("Students" to listOf("Student ID", "Full Name", "Face ID", "Group Name")) to mapOf("Students" to listOf(listOf("210-22", "Vali Aliyev", "FACE_22", "611-21")))
             "lessons" -> mapOf("Lessons" to listOf("Day(1-6)", "Slot(1-7)", "SubCode", "Room", "Building", "Groups", "TeacherUser", "Type")) to mapOf("Lessons" to listOf(listOf("1", "1", "CSE101", "101", "A-Bino", "611-21, 612-21", "ali_v", "LECTURE")))
             "allocations" -> mapOf("Allocations" to listOf("Teacher Username", "Subject Code", "Group Name")) to mapOf("Allocations" to listOf(listOf("ali_v", "CSE101", "611-21")))
+            "curriculums" -> mapOf("Curriculums" to listOf("Group Name", "Subject Name", "Hours Per Week", "Semester")) to
+                    mapOf("Curriculums" to listOf(listOf("941-21", "Backend (Kotlin)", "4", "4")))
             else -> throw IllegalArgumentException("Tur topilmadi!")
         }
 

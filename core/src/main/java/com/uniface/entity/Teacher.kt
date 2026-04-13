@@ -32,5 +32,10 @@ class Teacher(
     // 5. Guruhlari
     @ManyToMany
     @JoinTable(name = "teacher_groups")
-    var groups: MutableSet<StudentGroup> = mutableSetOf()
+    var groups: MutableSet<StudentGroup> = mutableSetOf(),
+
+    // --- MANA BU QATORNI QO'SHAMIZ ---
+    @OneToMany(mappedBy = "teacher", fetch = FetchType.LAZY)
+    @JsonBackReference // JSONda SubjectAllocation ichida Teacher, Teacher ichida yana SubjectAllocation aylanib qolmasligi uchun ✅
+    var allocations: MutableList<SubjectAllocation> = mutableListOf()
 )
