@@ -27,11 +27,13 @@ class MatrixService2(
         val rooms = roomRepository.findAll()
         val timeslots = timeslotRepository.findAll()
 
+        println(">>> AIga berilayotgan darslar soni: ${lessons.size}") // Agar bu 0 bo'lsa, bazaga dars qo'shish kerak
+
         // 2. Planning Problem (shartli masala) yaratamiz
         val problem = Timetable(
             timeslots = timeslots,
             rooms = rooms,
-            lessons = lessons
+            lessons = lessons.toMutableList()
         )
 
         // 3. Masalani yechamiz (AI ishga tushadi)

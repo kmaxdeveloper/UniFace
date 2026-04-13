@@ -17,21 +17,21 @@ class Timetable(
     // Darslar qaysi vaqt oralig'ida bo'lishi mumkinligi (Manba)
     @ValueRangeProvider(id = "timeslotRange")
     @ProblemFactCollectionProperty
-    var timeslots: List<TimeSlot> = emptyList(),
+    var timeslots: List<TimeSlot> = mutableListOf(),
 
     // Darslar qaysi xonalarda bo'lishi mumkinligi (Manba)
     @ValueRangeProvider(id = "roomRange")
     @ProblemFactCollectionProperty
-    var rooms: List<Room> = emptyList(),
+    var rooms: List<Room> = mutableListOf(),
 
     // Rejalashtirilishi kerak bo'lga darslar ro'yxati (Planning Entities)
     @PlanningEntityCollectionProperty
-    var lessons: List<Lesson> = emptyList(),
+    var lessons: List<Lesson> = mutableListOf(),
 
     // Algoritm natijasini saqlash uchun ball (Score)
     @PlanningScore
     var score: HardSoftScore? = null
 ) {
     // Timefold solver ishlashi uchun bo'sh konstruktor shart
-    constructor() : this(emptyList(), emptyList(), emptyList())
+    constructor() : this(mutableListOf(), mutableListOf(), mutableListOf())
 }

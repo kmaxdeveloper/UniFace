@@ -13,7 +13,7 @@ import java.time.LocalDateTime
 @Table(name = "lessons")
 class Lesson(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id")
