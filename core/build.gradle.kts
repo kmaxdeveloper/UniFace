@@ -23,6 +23,7 @@ dependencies {
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("ai.timefold.solver:timefold-solver-spring-boot-starter:1.10.0")
 }
 
 tasks.test {
