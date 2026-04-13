@@ -64,6 +64,11 @@ dependencies {
     testImplementation("com.h2database:h2")
     // Excel (.xlsx) fayllarni o'qish uchun
     implementation("org.apache.poi:poi-ooxml:5.2.3")
+
+    implementation("ai.timefold.solver:timefold-solver-spring-boot-starter:1.10.0")
+
+    // Agar yuqoridagidan keyin ham topmasa, core'ni ham qo'shib qo'y:
+    implementation("ai.timefold.solver:timefold-solver-core:1.10.0")
 }
 
 tasks.test {

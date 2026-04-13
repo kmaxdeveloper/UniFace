@@ -15,87 +15,106 @@ class MatrixConstraintProvider : ConstraintProvider {
             roomConflict(factory),
             teacherConflict(factory),
             studentGroupConflict(factory),
-//            capacityConflict(factory),
-//            facultyBuildingStability(factory),
+            capacityConflict(factory),
+            laboratoryRequirement(factory),
+            facultyBuildingStability(factory),
             minimizeStudentGaps(factory)
         )
     }
 
+    // 1. Xona bandligi (lesson.room va lesson.timeslot ishlatildi)
     private fun roomConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal { lesson -> lesson.room },
-                Joiners.equal { lesson -> lesson.timeslot },
-                Joiners.lessThan { lesson -> lesson.id ?: 0L } // ID null bo'lsa 0 deb oladi
+                Joiners.equal { it.room },
+                Joiners.equal { it.timeslot },
+                Joiners.lessThan { it.id ?: 0L }
             )
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Room conflict")
     }
 
+    // 2. Ustoz bandligi
     private fun teacherConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal { lesson -> lesson.teacher },
-                Joiners.equal { lesson -> lesson.timeslot },
-                Joiners.lessThan { lesson -> lesson.id ?: 0L } // Bu yerda ham nullable ID ni hal qilamiz
+                Joiners.equal { it.teacher },
+                Joiners.equal { it.timeslot },
+                Joiners.lessThan { it.id ?: 0L }
             )
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Teacher conflict")
     }
 
+    // 3. Guruhlar to'qnashuvi (lesson.groups ishlatildi)
     private fun studentGroupConflict(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal { lesson -> lesson.groups },    // Lesson::group o'rniga
-                Joiners.equal { lesson -> lesson.timeslot }, // Lesson::timeslot o'rniga
-                Joiners.lessThan { lesson -> lesson.id ?: 0L } // ID null bo'lsa 0 deb oladi
+                Joiners.equal { it.timeslot },
+                Joiners.lessThan { it.id ?: 0L }
             )
+            .filter { l1, l2 ->
+                l1.groups.any { g1 -> l2.groups.any { g2 -> g1.id == g2.id } }
+            }
             .penalize(HardSoftScore.ONE_HARD)
-            .asConstraint("Student group conflict")
+            .asConstraint("Student group overlap")
     }
 
-    // 4. Talabalar soni xona sig'imidan oshib ketmasin
-//    private fun capacityConflict(factory: ConstraintFactory): Constraint {
-//        return factory.forEach(Lesson::class.java)
-//            .filter { lesson ->
-//                val sCount = lesson.groups ?: 0
-//                val rCap = lesson.room?.capacity ?: 0
-//                // Xona borligini va sig'im yetarli emasligini tekshiramiz
-//                lesson.room != null && sCount > rCap
-//            }
-//            .penalize(HardSoftScore.ONE_HARD)
-//            .asConstraint("Capacity conflict")
-//    }
+    // 4. Xona sig'imi (Guruhlardagi studentCount yig'indisi)
+    private fun capacityConflict(factory: ConstraintFactory): Constraint {
+        return factory.forEach(Lesson::class.java)
+            .filter { lesson ->
+                val room = lesson.room ?: return@filter false
+                val totalStudents = lesson.groups.sumOf { it.studentCount }
+                totalStudents > room.capacity
+            }
+            .penalize(HardSoftScore.ofHard(10))
+            .asConstraint("Capacity exceeded")
+    }
 
-    // 5. Fakultet darslari o'z binosida bo'lsin
-//    private fun facultyBuildingStability(factory: ConstraintFactory): Constraint {
-//        return factory.forEach(Lesson::class.java)
-//            .filter { lesson ->
-//                val fName = lesson.groups
-//                // BU YERDA: .name qo'shildi, chunki building bu obyekt ✅
-//                val bName = lesson.room?.building?.name
-//
-//                if (fName != null && bName != null) {
-//                    !bName.contains(fName, ignoreCase = true)
-//                } else {
-//                    false
-//                }
-//            }
-//            .penalize(HardSoftScore.ofSoft(10))
-//            .asConstraint("Faculty building preference")
-//    }
+    // 5. Laboratoriya talabi (Subject.labHours va Room.isLaboratory)
+    private fun laboratoryRequirement(factory: ConstraintFactory): Constraint {
+        return factory.forEach(Lesson::class.java)
+            .filter { lesson ->
+                val subject = lesson.subject ?: return@filter false
+                val room = lesson.room ?: return@filter false
 
+                // Agar fanda lab soatlari bo'lsa, xona laboratoriya bo'lishi shart
+                (subject.labHours > 0) && !room.isLaboratory
+            }
+            .penalize(HardSoftScore.ofHard(5))
+            .asConstraint("Laboratory room requirement")
+    }
+
+    // 6. Fakultet binosi (Soft constraint)
+    private fun facultyBuildingStability(factory: ConstraintFactory): Constraint {
+        return factory.forEach(Lesson::class.java)
+            .filter { lesson ->
+                val firstGroupFaculty = lesson.groups.firstOrNull()?.faculty?.name
+                val roomBuildingName = lesson.room?.building?.name
+
+                if (firstGroupFaculty != null && roomBuildingName != null) {
+                    !roomBuildingName.contains(firstGroupFaculty, ignoreCase = true)
+                } else false
+            }
+            .penalize(HardSoftScore.ofSoft(10))
+            .asConstraint("Faculty building preference")
+    }
+
+    // 7. Talabalar uchun "okno"larni (gaps) kamaytirish
     private fun minimizeStudentGaps(factory: ConstraintFactory): Constraint {
         return factory.forEach(Lesson::class.java)
             .join(Lesson::class.java,
-                Joiners.equal(Lesson::groups),
-                Joiners.equal { it.timeslot?.dayOfWeek })
+                Joiners.equal { it.timeslot?.dayOfWeek }
+            )
             .filter { l1, l2 ->
+                val commonGroup = l1.groups.any { g1 -> l2.groups.any { g2 -> g1.id == g2.id } }
                 val p1 = l1.timeslot?.pairNumber ?: 0
                 val p2 = l2.timeslot?.pairNumber ?: 0
-                abs(p1 - p2) > 1
+
+                commonGroup && abs(p1 - p2) > 1
             }
             .penalize(HardSoftScore.ONE_SOFT)
-            .asConstraint("Minimize gaps")
+            .asConstraint("Minimize student gaps")
     }
 }
