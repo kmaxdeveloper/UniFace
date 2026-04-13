@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.boot.autoconfigure.domain.EntityScan
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = ["com.uniface"]) // Butun com.uniface paketini skaner qiladi
 @EnableJpaRepositories("com.uniface.repository")
 @EntityScan("com.uniface.entity")
 class UniFaceApplication
