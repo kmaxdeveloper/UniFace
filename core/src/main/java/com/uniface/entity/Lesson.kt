@@ -1,11 +1,14 @@
 package com.uniface.entity
 
+import ai.timefold.solver.core.api.domain.entity.PlanningEntity
+import ai.timefold.solver.core.api.domain.variable.PlanningVariable
 import com.uniface.data.LessonType
 import com.uniface.entity.matrix.Room
 import com.uniface.entity.matrix.TimeSlot
 import jakarta.persistence.*
 import java.time.LocalDateTime
 
+@PlanningEntity
 @Entity
 @Table(name = "lessons")
 class Lesson(
@@ -33,9 +36,11 @@ class Lesson(
     @Enumerated(EnumType.STRING)
     var type: LessonType = LessonType.PRACTICE,
 
+    @PlanningVariable(valueRangeProviderRefs = ["timeslotRange"]) // AI vaqtni tanlaydi
     @ManyToOne(fetch = FetchType.LAZY)
     var timeslot: TimeSlot? = null,
 
+    @PlanningVariable(valueRangeProviderRefs = ["roomRange"]) // AI xonani tanlaydi
     @ManyToOne(fetch = FetchType.LAZY)
     var room: Room? = null,
 
