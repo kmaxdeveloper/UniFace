@@ -24,7 +24,7 @@ services:
       AWS_SECRET_KEY: ${MY_AWS_SECRET_KEY}
       JWT_SECRET: ${MY_JWT_SECRET}
       # --- TimeFold ------
-      TIMEFOLD_SOLVER_PLANNING_SOLUTION_CLASS: com.uniface.matrix.domain.Timetable
+      TIMEFOLD_SOLVER_DEFAULT_PLANNING_SOLUTION_CLASS: com.uniface.matrix.domain.Timetable
       # --- VAQT ZONASINI SOZLASH ---
       TZ: Asia/Tashkent
       JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Tashkent"
