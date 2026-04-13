@@ -31,4 +31,9 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
 
     fun findAllByGroupsId(groupId: Long): List<Lesson>
     fun existsByRoomIdAndTimeslotId(roomId: Long, timeslotId: Long): Boolean
+
+    fun findByGroups_Name(groupName: String): List<Lesson>
+
+    // Ustoz ID si bo'yicha darslarni topish
+    fun findByTeacher_Id(teacherId: Long): List<Lesson>
 }
