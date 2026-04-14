@@ -1,16 +1,13 @@
 package com.uniface.matrix.controller
 
-import com.uniface.matrix.service.MatrixService
-import com.uniface.matrix.service.MatrixService2
-import org.springframework.web.bind.annotation.PostMapping
+import com.uniface.matrix.service.MatrixService5
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.http.ResponseEntity
 
 @RestController
 @RequestMapping("/api/admin/matrix")
 class MatrixAdmin2Controller(
-    private val matrixService: MatrixService
+    private val matrixService: MatrixService5
 ) {
 
 //    @PostMapping("/generate")

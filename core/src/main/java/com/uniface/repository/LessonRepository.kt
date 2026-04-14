@@ -3,6 +3,7 @@ package com.uniface.repository
 import com.uniface.entity.Lesson
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 import java.time.LocalDateTime
 
@@ -36,4 +37,31 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
 
     // Ustoz ID si bo'yicha darslarni topish
     fun findByTeacher_Id(teacherId: Long): List<Lesson>
+
+    @Query("""
+        SELECT DISTINCT l FROM Lesson l
+        JOIN l.groups g
+        WHERE g.id = :groupId
+        AND l.timeslot IS NOT NULL
+        ORDER BY l.timeslot.dayOfWeek, l.timeslot.pairNumber
+    """)
+    fun findByGroupId(@Param("groupId") groupId: Long): List<Lesson>
+
+    // O'qituvchi bo'yicha
+    @Query("""
+        SELECT l FROM Lesson l
+        WHERE l.teacher.id = :teacherId
+        AND l.timeslot IS NOT NULL
+        ORDER BY l.timeslot.dayOfWeek, l.timeslot.pairNumber
+    """)
+    fun findByTeacherId(@Param("teacherId") teacherId: Long): List<Lesson>
+
+    // Xona bo'yicha
+    @Query("""
+        SELECT l FROM Lesson l
+        WHERE l.room.id = :roomId
+        AND l.timeslot IS NOT NULL
+        ORDER BY l.timeslot.dayOfWeek, l.timeslot.pairNumber
+    """)
+    fun findByRoomId(@Param("roomId") roomId: Long): List<Lesson>
 }

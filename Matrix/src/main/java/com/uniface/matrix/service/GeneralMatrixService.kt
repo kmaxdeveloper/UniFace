@@ -1,13 +1,12 @@
 package com.uniface.matrix.service
 
-import com.uniface.entity.SubjectAllocation
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
 @Service
 class GeneralMatrixService(
     private val allocationService: SubjectAllocationService2,
-    private val matrixService: MatrixService
+    private val matrixService: MatrixService5
 ) {
     @Transactional
     fun startTheMatrix(): Map<String, Any> {
