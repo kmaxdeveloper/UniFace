@@ -10,6 +10,10 @@ services:
       TZ: Asia/Tashkent
     ports:
       - "5432:5432"
+    # --- BU YERNI QO'SHIB QO'Y ---
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    # ---------------------------
 
   app:
     build: .
@@ -20,6 +24,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://uniface_db:5432/${DB_NAME}
       SPRING_DATASOURCE_USERNAME: ${DB_USER}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update # <--- Buni ham qo'shib qo'yish xavfsizroq
       AWS_ACCESS_KEY: ${MY_AWS_ACCESS_KEY}
       AWS_SECRET_KEY: ${MY_AWS_SECRET_KEY}
       JWT_SECRET: ${MY_JWT_SECRET}
@@ -29,3 +34,6 @@ services:
       # -----------------------------
     depends_on:
       - db
+
+volumes:
+  postgres_data:

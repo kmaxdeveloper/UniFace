@@ -1,6 +1,7 @@
 package com.uniface.entity
 
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity
+import ai.timefold.solver.core.api.domain.lookup.PlanningId
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable
 import com.uniface.data.LessonType
 import com.uniface.entity.matrix.Room
@@ -13,6 +14,7 @@ import java.time.LocalDateTime
 @Table(name = "lessons")
 class Lesson(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @PlanningId
     var id: Long? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
