@@ -9,7 +9,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/api/matrix")
+@RequestMapping("/api/v1/admin/matrix")
 class MatrixController(
     private val matrixService: MatrixService
 ) {
