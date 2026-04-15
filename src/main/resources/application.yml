@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: UniFace
+
+  datasource:
+    # Docker ichida SPRING_DATASOURCE_URL environment ishlatganing uchun
+    # bu yerda ularni yozmasang ham bo'ladi, lekin Timefold uchun quyidagilar kerak:
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+# MANA SHU QISMI TIMEFOLD UCHUN ENG MUHIMI:
+timefold:
+  solver:
+    termination:
+      spent-limit: 5m
+      best-score-feasible: true
