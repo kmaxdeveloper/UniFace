@@ -17,6 +17,10 @@ import java.time.Duration
  * SolverManager → async solve uchun ishlatiladi
  * SolverConfig  → qanday ishlashi (qoidalar, limit)
  */
+
+/*
+   ~~~ Ishlamasa buni o'chrib qo'yish kerak !
+ */
 @Configuration
 class TimefoldConfig {
 
