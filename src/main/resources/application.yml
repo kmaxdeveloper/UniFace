@@ -12,9 +12,9 @@ spring:
       ddl-auto: update
     show-sql: true
 
-# MANA SHU QISMI TIMEFOLD UCHUN ENG MUHIMI:
 timefold:
   solver:
     termination:
-      spent-limit: 5m
-      best-score-feasible: true
+      # 'best-score-feasible: true' degan joyini o'chirib tashla
+      # O'rniga faqat vaqt yoki ball limitini qo'yish kerak:
+      spent-limit: 1m # Hisoblash uchun maksimal 30 soniya vaqt beradi
