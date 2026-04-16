@@ -161,6 +161,9 @@ class MatrixService(
         val allocations = subjectAllocationRepository.findAll()
         val lessons     = mutableListOf<Lesson>()
 
+        // --- ID berish uchun counter qo'shildi ---
+        var lessonIdCounter = 1L
+
         log.info("📚 Curriculum count for semester=$semester: ${curricula.size}")
         log.info("📋 Total allocations: ${allocations.size}")
 
@@ -192,7 +195,10 @@ class MatrixService(
                     subject = subject,
                     teacher = teacher,
                     type    = LessonType.LECTURE
-                ).apply { groups.add(group) })
+                ).apply {
+                    id = lessonIdCounter++ // Solver tanib olishi uchun ID berdik
+                    groups.add(group)
+                })
             }
 
             repeat(subject.labHours) {
@@ -200,7 +206,10 @@ class MatrixService(
                     subject = subject,
                     teacher = teacher,
                     type    = LessonType.LABORATORY
-                ).apply { groups.add(group) })
+                ).apply {
+                    id = lessonIdCounter++ // Solver tanib olishi uchun ID berdik
+                    groups.add(group)
+                })
             }
         }
 
