@@ -11,6 +11,7 @@ import com.uniface.repository.GroupRepository
 import com.uniface.repository.SubjectRepository
 import com.uniface.repository.matrix.FacultyRepository
 import com.uniface.service.UserService
+import com.uniface.service.admin.AdminUpdateService
 import com.uniface.service.matrix.AdminService
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.PathVariable
@@ -27,7 +28,8 @@ class AdminUpdateController(
     private val subjectRepository: SubjectRepository,
     private val groupRepository: GroupRepository,
     private val facultyRepository: FacultyRepository,
-    private val adminService: AdminService
+    private val adminService: AdminService,
+    private val adminUpdateService: AdminUpdateService
 ) {
 
     @PutMapping("/update-teacher/{id}")
@@ -36,37 +38,6 @@ class AdminUpdateController(
         ResponseEntity.ok("O'qituvchi ma'lumotlari yangilandi!")
     } catch (e: Exception) {
         ResponseEntity.badRequest().body("Yangilashda xato: ${e.message}")
-    }
-
-    // 2. GURUHNI YANGILASH (Nomi yoki fakultetini o'zgartirish)
-    @PutMapping("/update-group/{id}")
-    fun updateGroup(@PathVariable id: Long, @RequestBody groupDetails: StudentGroup) = try {
-        val group = groupRepository.findById(id).orElseThrow { Exception("Guruh topilmadi!") }
-        group.name = groupDetails.name
-        // Agar boshqa maydonlar bo'lsa, ularni ham shu yerda update qilamiz
-        ResponseEntity.ok(groupRepository.save(group))
-    } catch (e: Exception) {
-        ResponseEntity.badRequest().body(e.message)
-    }
-
-    // 3. FANNi YANGILASH
-    @PutMapping("/update-subject/{id}")
-    fun updateSubject(@PathVariable id: Long, @RequestBody subjectDetails: Subject) = try {
-        val subject = subjectRepository.findById(id).orElseThrow { Exception("Fan topilmadi!") }
-        subject.name = subjectDetails.name
-        ResponseEntity.ok(subjectRepository.save(subject))
-    } catch (e: Exception) {
-        ResponseEntity.badRequest().body(e.message)
-    }
-
-    // 4. FAKULTETNI YANGILASH
-    @PutMapping("/update-faculty/{id}")
-    fun updateFaculty(@PathVariable id: Long, @RequestBody facultyDetails: Faculty) = try {
-        val faculty = facultyRepository.findById(id).orElseThrow { Exception("Fakultet topilmadi!") }
-        faculty.name = facultyDetails.name
-        ResponseEntity.ok(facultyRepository.save(faculty))
-    } catch (e: Exception) {
-        ResponseEntity.badRequest().body(e.message)
     }
 
     @PutMapping("/update-room/{id}")
@@ -105,6 +76,29 @@ class AdminUpdateController(
         ResponseEntity.ok(adminService.updateStudent(id, fullName, groupId))
     } catch (e: Exception) {
         ResponseEntity.badRequest().body("Talabani yangilashda xato: ${e.message}")
+    }
+
+    // Controller ichidagi funksiyalar:
+
+    @PutMapping("/update-subject/{id}")
+    fun updateSubject(@PathVariable id: Long, @RequestBody details: Subject) = try {
+        ResponseEntity.ok(adminUpdateService.updateSubject(id, details))
+    } catch (e: Exception) {
+        ResponseEntity.badRequest().body(e.message)
+    }
+
+    @PutMapping("/update-group/{id}")
+    fun updateGroup(@PathVariable id: Long, @RequestBody details: StudentGroup) = try {
+        ResponseEntity.ok(adminUpdateService.updateGroup(id, details))
+    } catch (e: Exception) {
+        ResponseEntity.badRequest().body(e.message)
+    }
+
+    @PutMapping("/update-faculty/{id}")
+    fun updateFaculty(@PathVariable id: Long, @RequestBody details: Faculty) = try {
+        ResponseEntity.ok(adminUpdateService.updateFaculty(id, details))
+    } catch (e: Exception) {
+        ResponseEntity.badRequest().body(e.message)
     }
 
     // Kelajakda talaba yoki boshqa ma'lumotlarni update qilish kodi ham shu yerga tushadi
