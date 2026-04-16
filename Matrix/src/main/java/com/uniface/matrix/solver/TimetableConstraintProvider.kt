@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
 import ai.timefold.solver.core.api.score.stream.*
 import com.uniface.data.LessonType
 import com.uniface.entity.Lesson
+import kotlin.math.abs
 
 /**
  * Barcha qoidalar shu yerda.
@@ -29,7 +30,10 @@ class TimetableConstraintProvider : ConstraintProvider {
         // ── SOFT ──────────────────────────────────────────
         preferEarlyPairs(factory),
         maxLessonsPerDayPerGroup(factory),
-        maxLessonsPerDayPerTeacher(factory)
+        maxLessonsPerDayPerTeacher(factory),
+        // Buni defineConstraints massiviga qo'shib qo'y
+        compactGroupSchedule(factory),
+        spreadLessonsEvenly(factory)
     )
 
     // ──────────────────────────────────────────────────────
@@ -148,4 +152,38 @@ class TimetableConstraintProvider : ConstraintProvider {
             .filter { _, _, count -> count > 4 }
             .penalize(HardSoftScore.ONE_SOFT) { _, _, count -> count - 4 }
             .asConstraint("Max 4 lessons per day per teacher")
+
+    // ──────────────────────────────────────────────────────
+// SOFT: Darslarni haftaga tekis yoyish (Majburlash)
+// ──────────────────────────────────────────────────────
+    private fun spreadLessonsEvenly(factory: ConstraintFactory): Constraint =
+        factory.forEach(Lesson::class.java)
+            .groupBy(
+                { it.groups.firstOrNull()?.id },
+                { it.timeslot?.dayOfWeek },
+                ConstraintCollectors.count()
+            )
+            // Agar bir kunda darslar soni 2 tadan oshsa, ko'proq jazo beramiz
+            // Bu solverni dars yo'q kunlarga dars qidirishga majbur qiladi
+            .filter { _, _, count -> count > 2 }
+            .penalize(HardSoftScore.ofSoft(10)) { _, _, count -> count - 2 }
+            .asConstraint("Spread lessons evenly")
+
+    // ──────────────────────────────────────────────────────
+// SOFT: Guruh darslari orasida oyna (bo'shliq) bo'lmasin
+// ──────────────────────────────────────────────────────
+    private fun compactGroupSchedule(factory: ConstraintFactory): Constraint =
+        factory.forEachUniquePair(
+            Lesson::class.java,
+            Joiners.equal { it.groups.firstOrNull()?.id },
+            Joiners.equal { it.timeslot?.dayOfWeek }
+        )
+            .filter { a, b ->
+                val diff = abs((a.timeslot?.pairNumber ?: 0) - (b.timeslot?.pairNumber ?: 0))
+                diff > 1 // Agar darslar orasida 1 tadan ko'p para bo'sh bo'lsa
+            }
+            .penalize(HardSoftScore.ONE_SOFT) { a, b ->
+                abs((a.timeslot?.pairNumber ?: 0) - (b.timeslot?.pairNumber ?: 0))
+            }
+            .asConstraint("Compact group schedule")
 }
