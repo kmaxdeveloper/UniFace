@@ -6,20 +6,11 @@ import com.uniface.data.LessonType
 import com.uniface.entity.Lesson
 import kotlin.math.abs
 
-/**
- * Barcha qoidalar shu yerda.
- *
- * HARD constraint → buzilsa jadval YAROQSIZ
- * SOFT constraint → buzilsa score PASAYADI (lekin jadval yaroqli)
- *
- * Timefold score'ni maksimumga chiqarishga harakat qiladi:
- *   Maqsad: hardScore = 0, softScore = imkon qadar katta
- */
 class TimetableConstraintProvider : ConstraintProvider {
 
     override fun defineConstraints(factory: ConstraintFactory): Array<Constraint> = arrayOf(
 
-        // ── HARD ──────────────────────────────────────────
+        // HARD
         teacherConflict(factory),
         roomConflict(factory),
         groupConflict(factory),
@@ -27,18 +18,16 @@ class TimetableConstraintProvider : ConstraintProvider {
         labRoomRequired(factory),
         lectureNotInLab(factory),
 
-        // ── SOFT ──────────────────────────────────────────
+        // SOFT
         preferEarlyPairs(factory),
         maxLessonsPerDayPerGroup(factory),
         maxLessonsPerDayPerTeacher(factory),
-        // Buni defineConstraints massiviga qo'shib qo'y
         compactGroupSchedule(factory),
         spreadLessonsEvenly(factory)
     )
 
-    // ──────────────────────────────────────────────────────
-    // HARD 1: Bir o'qituvchi bir vaqtda 2 ta dars bera olmaydi
-    // ──────────────────────────────────────────────────────
+    // ───────────────── HARD ─────────────────
+
     private fun teacherConflict(factory: ConstraintFactory): Constraint =
         factory.forEachUniquePair(
             Lesson::class.java,
@@ -49,9 +38,6 @@ class TimetableConstraintProvider : ConstraintProvider {
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Teacher conflict")
 
-    // ──────────────────────────────────────────────────────
-    // HARD 2: Bir xona bir vaqtda 2 ta darsga band bo'lmaydi
-    // ──────────────────────────────────────────────────────
     private fun roomConflict(factory: ConstraintFactory): Constraint =
         factory.forEachUniquePair(
             Lesson::class.java,
@@ -62,9 +48,6 @@ class TimetableConstraintProvider : ConstraintProvider {
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Room conflict")
 
-    // ──────────────────────────────────────────────────────
-    // HARD 3: Bir guruh bir vaqtda 2 ta darsda bo'lmaydi
-    // ──────────────────────────────────────────────────────
     private fun groupConflict(factory: ConstraintFactory): Constraint =
         factory.forEachUniquePair(
             Lesson::class.java,
@@ -77,101 +60,76 @@ class TimetableConstraintProvider : ConstraintProvider {
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Group conflict")
 
-    // ──────────────────────────────────────────────────────
-    // HARD 4: Xona sig'imi talabalar sonidan kam bo'lmaydi
-    // ──────────────────────────────────────────────────────
     private fun roomCapacityConflict(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
-            .filter { lesson ->
-                val students = lesson.groups.sumOf { it.studentCount }
-                val capacity = lesson.room?.capacity ?: 0
-                lesson.room != null && capacity < students
-            }
+            .filter { it.room != null }
             .penalize(HardSoftScore.ONE_HARD) { lesson ->
                 val students = lesson.groups.sumOf { it.studentCount }
-                val capacity = lesson.room?.capacity ?: 0
-                students - capacity   // qancha oshsa, shuncha penalize
+                val capacity = lesson.room!!.capacity
+                if (capacity >= students) 0 else students - capacity
             }
             .asConstraint("Room capacity exceeded")
 
-    // ──────────────────────────────────────────────────────
-    // HARD 5: LAB darsi faqat laboratoriyada o'tiladi
-    // ──────────────────────────────────────────────────────
     private fun labRoomRequired(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
             .filter { it.type == LessonType.LABORATORY && it.room?.isLaboratory == false }
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Lab needs laboratory room")
 
-    // ──────────────────────────────────────────────────────
-    // HARD 6: LECTURE laboratoriyada o'tilmaydi
-    // ──────────────────────────────────────────────────────
     private fun lectureNotInLab(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
             .filter { it.type == LessonType.LECTURE && it.room?.isLaboratory == true }
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Lecture not in lab room")
 
-    // ──────────────────────────────────────────────────────
-    // SOFT 1: Kechki paralardan qoching (5-6 para yomon)
-    // ──────────────────────────────────────────────────────
+    // ───────────────── SOFT ─────────────────
+
     private fun preferEarlyPairs(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
-            .filter { (it.timeslot?.pairNumber ?: 0) > 4 }
+            .filter { it.timeslot != null && it.timeslot!!.pairNumber > 4 }
             .penalize(HardSoftScore.ONE_SOFT) { lesson ->
-                (lesson.timeslot?.pairNumber ?: 0) - 4
+                (lesson.timeslot!!.pairNumber - 4) * 2
             }
             .asConstraint("Prefer early pairs")
 
-    // ──────────────────────────────────────────────────────
-    // SOFT 2: Guruh uchun bir kunda 3 dan ko'p dars bo'lmasin
-    // ──────────────────────────────────────────────────────
     private fun maxLessonsPerDayPerGroup(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
-            .filter { it.timeslot != null }
+            .filter { it.timeslot != null && it.groups.isNotEmpty() }
             .groupBy(
                 { it.timeslot!!.dayOfWeek },
-                { it.groups.firstOrNull()?.id },
+                { it.groups.first().id },
                 ConstraintCollectors.count()
             )
             .filter { _, _, count -> count > 3 }
             .penalize(HardSoftScore.ONE_SOFT) { _, _, count -> count - 3 }
             .asConstraint("Max 3 lessons per day per group")
 
-    // ──────────────────────────────────────────────────────
-    // SOFT 3: O'qituvchi uchun bir kunda 4 dan ko'p dars bo'lmasin
-    // ──────────────────────────────────────────────────────
     private fun maxLessonsPerDayPerTeacher(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
             .filter { it.timeslot != null && it.teacher != null }
             .groupBy(
                 { it.timeslot!!.dayOfWeek },
-                { it.teacher?.id },
+                { it.teacher!!.id },
                 ConstraintCollectors.count()
             )
             .filter { _, _, count -> count > 4 }
             .penalize(HardSoftScore.ONE_SOFT) { _, _, count -> count - 4 }
             .asConstraint("Max 4 lessons per day per teacher")
 
-    // ──────────────────────────────────────────────────────
-// SOFT: Darslarni haftaga tekis yoyish (Majburlash)
-// ──────────────────────────────────────────────────────
     private fun spreadLessonsEvenly(factory: ConstraintFactory): Constraint =
         factory.forEach(Lesson::class.java)
+            .filter { it.timeslot != null }
             .groupBy(
                 { it.groups.firstOrNull()?.id },
-                { it.timeslot?.dayOfWeek },
+                { it.timeslot!!.dayOfWeek },
                 ConstraintCollectors.count()
             )
-            // Agar bir kunda darslar soni 2 tadan oshsa, ko'proq jazo beramiz
-            // Bu solverni dars yo'q kunlarga dars qidirishga majbur qiladi
-            .filter { _, _, count -> count > 2 }
-            .penalize(HardSoftScore.ofSoft(10)) { _, _, count -> count - 2 }
+            .filter { groupId, _, count -> groupId != null && count > 2 }
+            .penalize(HardSoftScore.ofSoft(3)) { _, _, count ->
+                (count - 2) * 2
+            }
             .asConstraint("Spread lessons evenly")
 
-    // ──────────────────────────────────────────────────────
-// SOFT: Guruh darslari orasida oyna (bo'shliq) bo'lmasin
-// ──────────────────────────────────────────────────────
     private fun compactGroupSchedule(factory: ConstraintFactory): Constraint =
         factory.forEachUniquePair(
             Lesson::class.java,
@@ -179,11 +137,11 @@ class TimetableConstraintProvider : ConstraintProvider {
             Joiners.equal { it.timeslot?.dayOfWeek }
         )
             .filter { a, b ->
-                val diff = abs((a.timeslot?.pairNumber ?: 0) - (b.timeslot?.pairNumber ?: 0))
-                diff > 1 // Agar darslar orasida 1 tadan ko'p para bo'sh bo'lsa
+                a.timeslot != null && b.timeslot != null &&
+                        abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) > 1
             }
             .penalize(HardSoftScore.ONE_SOFT) { a, b ->
-                abs((a.timeslot?.pairNumber ?: 0) - (b.timeslot?.pairNumber ?: 0))
+                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
             }
             .asConstraint("Compact group schedule")
 }
