@@ -143,60 +143,44 @@ class MatrixService(
     }
 
     private fun buildLessons(semester: Int): List<Lesson> {
-        val curricula   = curriculumRepository.findBySemester(semester)
+        val curricula = curriculumRepository.findBySemester(semester)
         val allocations = subjectAllocationRepository.findAll()
-        val lessons     = mutableListOf<Lesson>()
+        val lessons = mutableListOf<Lesson>()
+        val weeksInSemester = 18 // 💡 TATU standarti bo'yicha 18 hafta
 
         var lessonIdCounter = 1L
-
-        log.info("📚 Curriculum count for semester=$semester: ${curricula.size}")
-        log.info("📋 Total allocations: ${allocations.size}")
-
-        // 🔥 YANGI: PERFORMANCE FIX
-        val allocationMap = allocations.associateBy {
-            it.subject?.id to it.group?.id
-        }
+        val allocationMap = allocations.associateBy { it.subject?.id to it.group?.id }
 
         for (cur in curricula) {
-            val subject = cur.subject
-            val group   = cur.group
+            val subject = cur.subject ?: continue
+            val group = cur.group ?: continue
+            val allocation = allocationMap[subject.id to group.id] ?: continue
+            val teacher = allocation.teacher ?: continue
 
-            if (subject == null) { log.warn("⚠️ Curriculum id=${cur.id} — subject NULL"); continue }
-            if (group == null)   { log.warn("⚠️ Curriculum id=${cur.id} — group NULL"); continue }
+            // 💡 Haftalik para sonini hisoblaymiz (1 para = 2 soat)
+            val weeklyLectures = (subject.lectureHours / 2) / weeksInSemester
+            val weeklyLabs = (subject.labHours / 2) / weeksInSemester
 
-            val allocation = allocationMap[subject.id to group.id]
-            if (allocation == null) {
-                log.warn("⚠️ subject=${subject.name}, group=${group.name} uchun allocation yo‘q")
-                continue
-            }
+            log.info("✅ ${subject.name} | Haftalik reja: Ma'ruza=${weeklyLectures}, Lab=${weeklyLabs}")
 
-            val teacher = allocation.teacher
-            if (teacher == null) {
-                log.warn("⚠️ subject=${subject.name}, group=${group.name} — teacher NULL")
-                continue
-            }
-
-            val total = subject.lectureHours + subject.labHours
-            if (total <= 0) continue
-
-            log.info("✅ ${subject.name} | ${group.name} | ${teacher.fullName} | total=$total")
-
-            repeat(subject.lectureHours) {
+            // Ma'ruzalar uchun
+            repeat(weeklyLectures) {
                 lessons.add(Lesson(
                     subject = subject,
                     teacher = teacher,
-                    type    = LessonType.LECTURE
+                    type = LessonType.LECTURE
                 ).apply {
                     id = lessonIdCounter++
                     groups.add(group)
                 })
             }
 
-            repeat(subject.labHours) {
+            // Laboratoriyalar uchun
+            repeat(weeklyLabs) {
                 lessons.add(Lesson(
                     subject = subject,
                     teacher = teacher,
-                    type    = LessonType.LABORATORY
+                    type = LessonType.LABORATORY
                 ).apply {
                     id = lessonIdCounter++
                     groups.add(group)
@@ -204,7 +188,7 @@ class MatrixService(
             }
         }
 
-        log.info("📋 Built ${lessons.size} lessons for semester=$semester")
+        log.info("📋 Built ${lessons.size} weekly lessons (paralar) for semester=$semester")
         return lessons
     }
 }
