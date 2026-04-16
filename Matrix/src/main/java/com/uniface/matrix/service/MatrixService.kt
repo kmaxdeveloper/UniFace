@@ -161,18 +161,32 @@ class MatrixService(
         val allocations = subjectAllocationRepository.findAll()
         val lessons     = mutableListOf<Lesson>()
 
-        for (cur in curricula) {
-            val subject = cur.subject ?: continue
-            val group   = cur.group   ?: continue
+        log.info("📚 Curriculum count for semester=$semester: ${curricula.size}")
+        log.info("📋 Total allocations: ${allocations.size}")
 
-            // Shu guruh + shu fanga tegishli allocation topamiz
+        for (cur in curricula) {
+            val subject = cur.subject
+            val group   = cur.group
+
+            if (subject == null) { log.warn("⚠️ Curriculum id=${cur.id} — subject NULL, o'tkazib yuborildi"); continue }
+            if (group == null)   { log.warn("⚠️ Curriculum id=${cur.id} — group NULL, o'tkazib yuborildi"); continue }
+
             val allocation = allocations.find {
                 it.subject?.id == subject.id && it.group?.id == group.id
-            } ?: continue
+            }
+            if (allocation == null) {
+                log.warn("⚠️ subject=${subject.name}, group=${group.name} uchun SubjectAllocation topilmadi")
+                continue
+            }
 
-            val teacher = allocation.teacher ?: continue
+            val teacher = allocation.teacher
+            if (teacher == null) {
+                log.warn("⚠️ subject=${subject.name}, group=${group.name} — teacher NULL")
+                continue
+            }
 
-            // Har bir lecture soati uchun 1 ta Lesson (timeslot=null, room=null)
+            log.info("✅ ${subject.name} | ${group.name} | ${teacher.fullName} | lecture=${subject.lectureHours} lab=${subject.labHours}")
+
             repeat(subject.lectureHours) {
                 lessons.add(Lesson(
                     subject = subject,
@@ -181,7 +195,6 @@ class MatrixService(
                 ).apply { groups.add(group) })
             }
 
-            // Har bir lab soati uchun 1 ta Lesson
             repeat(subject.labHours) {
                 lessons.add(Lesson(
                     subject = subject,
