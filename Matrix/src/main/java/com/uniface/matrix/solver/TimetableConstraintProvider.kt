@@ -20,6 +20,7 @@ class TimetableConstraintProvider : ConstraintProvider {
         labRoomRequired(factory),
         lectureNotInLab(factory),
         teacherMustBeQualified(factory),
+        teacherMaxLessonsPerDay(factory),
 
         // SOFT
         preferEarlyPairs(factory),
@@ -30,7 +31,8 @@ class TimetableConstraintProvider : ConstraintProvider {
         compactTeacherSchedule(factory),
         spreadTeacherLessonsEvenly(factory),
         avoidTooManyConsecutiveLessons(factory),
-        groupRoomStability(factory)
+        groupRoomStability(factory),
+        distributeTeacherLoadEvenly(factory)
     )
 
     // ───────────────── HARD ─────────────────
@@ -240,5 +242,37 @@ class TimetableConstraintProvider : ConstraintProvider {
             // Agar bir xil xonada qolishsa, ularni mukofotlaymiz
             .reward(HardSoftScore.ofSoft(2))
             .asConstraint("Group room stability")
+    }
+
+    // MatrixConstraintProvider.kt ichiga
+
+    // MatrixConstraintProvider.kt
+
+    fun teacherMaxLessonsPerDay(constraintFactory: ConstraintFactory): Constraint {
+        return constraintFactory
+            .forEach(Lesson::class.java)
+            .filter { it.timeslot != null && it.teacher != null }
+            .groupBy(
+                { it.teacher!! },
+                { it.timeslot!!.dayOfWeek },
+                ConstraintCollectors.count()
+            )
+            .filter { _, _, count -> count > 4 }
+            // Yangi API: penalize ichida Score ob'ekti berilmaydi, faqat int jarima beriladi
+            .penalize(HardSoftScore.ONE_HARD) { _, _, count -> (count - 4) * 10 }
+            .asConstraint("Teacher max 4 lessons per day")
+    }
+
+    fun distributeTeacherLoadEvenly(constraintFactory: ConstraintFactory): Constraint {
+        return constraintFactory
+            .forEach(Lesson::class.java)
+            .filter { it.teacher != null }
+            .groupBy(
+                { it.teacher!! },
+                ConstraintCollectors.count()
+            )
+            // Faqat jarima hisoblanadi (int)
+            .penalize(HardSoftScore.ONE_SOFT) { _, count -> count * count }
+            .asConstraint("Distribute teacher load evenly")
     }
 }
