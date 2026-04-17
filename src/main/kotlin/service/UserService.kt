@@ -81,14 +81,23 @@ class UserService(
         teacherRepository.save(teacher)
     }
 
-    fun getAllTeachers(): List<Teacher> = teacherRepository.findAll()
+    @Transactional // Bu juda muhim!
+    fun getAllTeachers(): List<Teacher> {
+        val teachers = teacherRepository.findAll()
+        // Har bir o'qituvchining fanlarini "o'yg'otib" (initialize) qo'yamiz
+        teachers.forEach { it.subjects.size }
+        return teachers
+    }
 
+    @Transactional
     fun updateUser(id: Long, request: UserDto): User {
-        val user = userRepository.findById(id).orElseThrow { RuntimeException("Ustoz topilmadi") }
+        val user = userRepository.findById(id).orElseThrow { RuntimeException("Foydalanuvchi topilmadi") }
         user.fullName = request.fullName
         if (!request.password.isNullOrBlank()) {
             user.password = passwordEncoder.encode(request.password)
         }
         return userRepository.save(user)
     }
+
+    // sonya blits
 }
