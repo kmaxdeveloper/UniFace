@@ -12,11 +12,6 @@ interface GroupRepository : JpaRepository<StudentGroup, Long> {
 
     fun findAllByFaculty_Name(name: String): List<StudentGroup>
 
-    // TO'G'RILANGAN VARIANT:
-    // StudentGroup-da 'teachers' yo'qligi uchun, so'rovni Teacher orqali yuboramiz
-    @Query("SELECT t.groups FROM Teacher t WHERE t.id = :teacherId")
-    fun findAllByTeacherId(teacherId: Long): List<StudentGroup>
-
     fun existsByName(name: String): Boolean
 
     fun findAllByFacultyId(facultyId: Long): List<StudentGroup>
