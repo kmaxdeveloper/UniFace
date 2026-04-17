@@ -4,6 +4,8 @@ import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore
 import ai.timefold.solver.core.api.score.stream.*
 import com.uniface.data.LessonType
 import com.uniface.entity.Lesson
+import com.uniface.entity.Subject
+import com.uniface.entity.Teacher
 import kotlin.math.abs
 
 class TimetableConstraintProvider : ConstraintProvider {
@@ -17,13 +19,16 @@ class TimetableConstraintProvider : ConstraintProvider {
         roomCapacityConflict(factory),
         labRoomRequired(factory),
         lectureNotInLab(factory),
+        teacherMustBeQualified(factory),
 
         // SOFT
         preferEarlyPairs(factory),
         maxLessonsPerDayPerGroup(factory),
         maxLessonsPerDayPerTeacher(factory),
         compactGroupSchedule(factory),
-        spreadLessonsEvenly(factory)
+        spreadLessonsEvenly(factory),
+        compactTeacherSchedule(factory),
+        spreadTeacherLessonsEvenly(factory)
     )
 
     // ───────────────── HARD ─────────────────
@@ -144,4 +149,50 @@ class TimetableConstraintProvider : ConstraintProvider {
                 abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
             }
             .asConstraint("Compact group schedule")
+
+    // Buni "HARD" bo'limiga qo'sh:
+    private fun teacherMustBeQualified(factory: ConstraintFactory): Constraint =
+        factory.forEach(Lesson::class.java)
+            .filter { lesson ->
+                lesson.teacher != null &&
+                        // Bu yerda o'zingni logikang: ustoz shu fanga (yoki kafedraga) tegishlimi?
+                        // Masalan: if (lesson.subject.teachers.none { it.id == lesson.teacher.id })
+                        !isQualified(lesson.teacher!!, lesson.subject!!)
+            }
+            .penalize(HardSoftScore.ONE_HARD)
+            .asConstraint("Teacher not qualified for subject")
+
+    // Bu yordamchi funksiya (misol tariqasida)
+    private fun isQualified(teacher: Teacher, subject: Subject): Boolean {
+        // Bu yerda ustoz shu fanni o'ta olishini tekshirasan
+        return true // Hozircha hammasi o'ta oladi deb turamiz
+    }
+
+    // Buni "SOFT" bo'limiga qo'sh:
+    private fun compactTeacherSchedule(factory: ConstraintFactory): Constraint =
+        factory.forEachUniquePair(
+            Lesson::class.java,
+            Joiners.equal { it.teacher?.id },
+            Joiners.equal { it.timeslot?.dayOfWeek }
+        )
+            .filter { a, b ->
+                a.timeslot != null && b.timeslot != null &&
+                        abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) > 1
+            }
+            .penalize(HardSoftScore.ONE_SOFT) { a, b ->
+                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
+            }
+            .asConstraint("Compact teacher schedule")
+
+    private fun spreadTeacherLessonsEvenly(factory: ConstraintFactory): Constraint =
+        factory.forEach(Lesson::class.java)
+            .filter { it.timeslot != null && it.teacher != null }
+            .groupBy(
+                { it.teacher!!.id },
+                { it.timeslot!!.dayOfWeek },
+                ConstraintCollectors.count()
+            )
+            .filter { _, _, count -> count > 3 } // Kuniga 3 tadan ko'p dars bo'lsa jarima
+            .penalize(HardSoftScore.ofSoft(2)) { _, _, count -> (count - 3) * 2 }
+            .asConstraint("Spread teacher lessons evenly")
 }

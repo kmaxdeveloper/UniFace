@@ -23,6 +23,7 @@ class Lesson(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
+    @PlanningVariable(valueRangeProviderRefs = ["teacherRange"])
     var teacher: Teacher? = null,
 
     // 1. O'ZGARISH: Bir nechta guruhni qo'llab-quvvatlash (Potok uchun)

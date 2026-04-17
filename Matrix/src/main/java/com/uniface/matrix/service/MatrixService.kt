@@ -22,7 +22,8 @@ class MatrixService(
     private val timeSlotRepository: TimeslotRepository,
     private val roomRepository: RoomRepository,
     private val subjectAllocationRepository: SubjectAllocationRepository,
-    private val curriculumRepository: CurriculumRepository
+    private val curriculumRepository: CurriculumRepository,
+    private val teacherRepository: TeacherRepository
 ) {
     private val log = LoggerFactory.getLogger(MatrixService::class.java)
 
@@ -33,6 +34,7 @@ class MatrixService(
 
         val timeSlots = timeSlotRepository.findAllOrdered()
         val rooms     = roomRepository.findAll()
+        val teachers  = teacherRepository.findAll()
         val lessons   = buildLessons(semester)
 
         if (lessons.isEmpty())
@@ -50,7 +52,8 @@ class MatrixService(
         val problem = TimetableSolution(
             timeSlots = timeSlots,
             rooms     = rooms,
-            lessons   = lessons
+            lessons   = lessons,
+            teachers = teachers
         )
 
         jobs[jobId] = JobStatus(jobId, SolveStatus.SOLVING, semester)
@@ -167,7 +170,7 @@ class MatrixService(
             repeat(weeklyLectures) {
                 lessons.add(Lesson(
                     subject = subject,
-                    teacher = teacher,
+                    teacher = null,
                     type = LessonType.LECTURE
                 ).apply {
                     id = lessonIdCounter++
@@ -179,7 +182,7 @@ class MatrixService(
             repeat(weeklyLabs) {
                 lessons.add(Lesson(
                     subject = subject,
-                    teacher = teacher,
+                    teacher = null,
                     type = LessonType.LABORATORY
                 ).apply {
                     id = lessonIdCounter++
