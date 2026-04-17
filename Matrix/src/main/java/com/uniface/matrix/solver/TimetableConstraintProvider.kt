@@ -28,7 +28,9 @@ class TimetableConstraintProvider : ConstraintProvider {
         compactGroupSchedule(factory),
         spreadLessonsEvenly(factory),
         compactTeacherSchedule(factory),
-        spreadTeacherLessonsEvenly(factory)
+        spreadTeacherLessonsEvenly(factory),
+        avoidTooManyConsecutiveLessons(factory),
+        groupRoomStability(factory)
     )
 
     // ───────────────── HARD ─────────────────
@@ -151,21 +153,31 @@ class TimetableConstraintProvider : ConstraintProvider {
             .asConstraint("Compact group schedule")
 
     // Buni "HARD" bo'limiga qo'sh:
-    private fun teacherMustBeQualified(factory: ConstraintFactory): Constraint =
-        factory.forEach(Lesson::class.java)
+    // 1. HARD CONSTRAINT: O'qituvchi faqat o'zi bilsan fanni o'tsin
+    private fun teacherMustBeQualified(factory: ConstraintFactory): Constraint {
+        return factory.forEach(Lesson::class.java)
             .filter { lesson ->
-                lesson.teacher != null &&
-                        // Bu yerda o'zingni logikang: ustoz shu fanga (yoki kafedraga) tegishlimi?
-                        // Masalan: if (lesson.subject.teachers.none { it.id == lesson.teacher.id })
-                        !isQualified(lesson.teacher!!, lesson.subject!!)
+                val teacher = lesson.teacher
+                val subject = lesson.subject
+
+                // 🔥 MUHIM: Ham teacher, ham subject null emasligini tekshiramiz
+                // Shunda Kotlin 'subject'ni Subject? dan Subject ga avtomat o'giradi (Smart Cast)
+                teacher != null && subject != null && !isQualified(teacher, subject)
             }
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Teacher not qualified for subject")
+    }
 
-    // Bu yordamchi funksiya (misol tariqasida)
+    // 2. Yordamchi mantiq (Logikani shu yerda kengaytiramiz)
     private fun isQualified(teacher: Teacher, subject: Subject): Boolean {
-        // Bu yerda ustoz shu fanni o'ta olishini tekshirasan
-        return true // Hozircha hammasi o'ta oladi deb turamiz
+        // 1-darajali tekshiruv: Ustozning subjects ro'yxatida shu fan bormi?
+        val hasSubjectSkill = teacher.subjects.any { it.id == subject.id }
+
+        // Kelajakda bu yerga qo'shimcha shartlar qo'shish mumkin:
+        // Masalan: Faqat "Professor"lar ma'ruza o'tsin, "Assistent"lar faqat lab o'tsin
+        // if (lessonType == LECTURE && teacher.rank != PROFESSOR) return false
+
+        return hasSubjectSkill
     }
 
     // Buni "SOFT" bo'limiga qo'sh:
@@ -195,4 +207,38 @@ class TimetableConstraintProvider : ConstraintProvider {
             .filter { _, _, count -> count > 3 } // Kuniga 3 tadan ko'p dars bo'lsa jarima
             .penalize(HardSoftScore.ofSoft(2)) { _, _, count -> (count - 3) * 2 }
             .asConstraint("Spread teacher lessons evenly")
+
+    /**
+     * Domlalar ketma-ket 3-4 ta para dars o'tsa, charchab qolishadi.
+     * AIga "ketma-ket darslarni kamaytir" deymiz
+     */
+    private fun avoidTooManyConsecutiveLessons(factory: ConstraintFactory): Constraint {
+        return factory.forEachUniquePair(Lesson::class.java,
+            Joiners.equal { it.teacher?.id },
+            Joiners.equal { it.timeslot?.dayOfWeek }
+        )
+            .filter { a, b ->
+                // Agar darslar ketma-ket bo'lsa (masalan 1 va 2, yoki 2 va 3)
+                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) == 1
+            }
+            // Bu darslar soni ko'paygani sari jarima ham o'sib boradi
+            .penalize(HardSoftScore.ofSoft(5))
+            .asConstraint("Avoid too many consecutive lessons")
+    }
+
+    /**
+     * Talabalar har para har xil korpus yoki qavatga yugurib yurmasligi uchun,
+     * bir guruhning darslarini imkon qadar bitta xonada (agar xona turi to'g'ri kelsa)
+     * saqlashga harakat qilamiz
+     */
+    private fun groupRoomStability(factory: ConstraintFactory): Constraint {
+        return factory.forEachUniquePair(Lesson::class.java,
+            Joiners.equal { it.groups.firstOrNull()?.id },
+            Joiners.equal { it.timeslot?.dayOfWeek },
+            Joiners.equal { it.room?.id }
+        )
+            // Agar bir xil xonada qolishsa, ularni mukofotlaymiz
+            .reward(HardSoftScore.ofSoft(2))
+            .asConstraint("Group room stability")
+    }
 }

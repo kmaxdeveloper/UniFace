@@ -19,7 +19,6 @@ class UserService(
     private val userRepository: UserRepository,
     private val teacherRepository: TeacherRepository,
     private val subjectRepository: SubjectRepository,
-    private val groupRepository: GroupRepository,
     private val passwordEncoder: PasswordEncoder
 ) {
 
@@ -43,69 +42,53 @@ class UserService(
             status = dto.status
         )
 
-        // 3. Fanlarni ID bo'yicha bazadan olib, ustozga biriktiramiz
+        // 3. Domla bera oladigan fanlarni biriktiramiz
         if (dto.subjectIds.isNotEmpty()) {
             val subjects = subjectRepository.findAllById(dto.subjectIds)
             teacher.subjects = subjects.toMutableSet()
         }
 
-        // 4. Guruhlarni ID bo'yicha bazadan olib, ustozga biriktiramiz
-        if (dto.groupIds.isNotEmpty()) {
-            val groups = groupRepository.findAllById(dto.groupIds)
-            teacher.groups = groups.toMutableSet()
-        }
-
-        // 5. Hammasi tayyor bo'lgach, bittada saqlaymiz
+        // 4. Saqlash
         teacherRepository.save(teacher)
-    }
-
-    // 2. Ustoz ma'lumotlarini yangilash (DTO qabul qiladi)
-    fun updateUser(id: Long, request: UserDto): User {
-        val user = userRepository.findById(id).orElseThrow {
-            RuntimeException("Ustoz topilmadi")
-        }
-
-        user.fullName = request.fullName
-
-        // Agar yangi parol kelsa va bo'sh bo'lmasa - yangilaymiz
-        if (!request.password.isNullOrBlank()) {
-            user.password = passwordEncoder.encode(request.password)
-        }
-
-        return userRepository.save(user)
-    }
-
-    fun getAllTeachers(): List<Teacher> {
-        // Faqat ustozlar jadvalidagilarni qaytaramiz
-        return teacherRepository.findAll()
     }
 
     @Transactional
     fun updateTeacherFull(userId: Long, dto: TeacherUpdateDto) {
-        // 1. Userni topamiz
         val user = userRepository.findById(userId)
             .orElseThrow { Exception("Foydalanuvchi topilmadi!") }
 
-        // 2. User ma'lumotlarini yangilaymiz
-        user.username = dto.username ?: user.username
-        user.fullName = dto.fullName ?: user.fullName
+        user.username = dto.username
+        user.fullName = dto.fullName
         if (!dto.password.isNullOrBlank()) {
             user.password = passwordEncoder.encode(dto.password)
         }
 
-        // 3. MUHIM: Teacher profilini to'g'ridan-to'g'ri bazadan qidiramiz
-        // user.teacherProfile o'rniga teacherRepository dan foydalanamiz
         val teacher = teacherRepository.findByUserId(userId)
             ?: throw Exception("Ushbu userda o'qituvchi profili mavjud emas!")
 
-        // 4. Teacher jadvalidagi ma'lumotlar
-        teacher.fullName = dto.fullName ?: teacher.fullName
-        teacher.department = dto.department ?: teacher.department
-        teacher.faculty = dto.faculty ?: teacher.faculty
-        teacher.status = dto.status ?: teacher.status
+        teacher.fullName = dto.fullName
+        teacher.department = dto.department
+        teacher.faculty = dto.faculty
+        teacher.status = dto.status
 
-        // Saqlash
+        // Fanlarni ham yangilab qo'yamiz (agar yangi ro'yxat kelsa)
+        if (dto.subjectIds.isNotEmpty()) {
+            val subjects = subjectRepository.findAllById(dto.subjectIds)
+            teacher.subjects = subjects.toMutableSet()
+        }
+
         userRepository.save(user)
         teacherRepository.save(teacher)
+    }
+
+    fun getAllTeachers(): List<Teacher> = teacherRepository.findAll()
+
+    fun updateUser(id: Long, request: UserDto): User {
+        val user = userRepository.findById(id).orElseThrow { RuntimeException("Ustoz topilmadi") }
+        user.fullName = request.fullName
+        if (!request.password.isNullOrBlank()) {
+            user.password = passwordEncoder.encode(request.password)
+        }
+        return userRepository.save(user)
     }
 }

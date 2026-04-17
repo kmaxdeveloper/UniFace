@@ -147,34 +147,32 @@ class MatrixService(
 
     private fun buildLessons(semester: Int): List<Lesson> {
         val curricula = curriculumRepository.findBySemester(semester)
-        val allocations = subjectAllocationRepository.findAll()
         val lessons = mutableListOf<Lesson>()
-        val weeksInSemester = 18 // 💡 TATU standarti bo'yicha 18 hafta
+        val weeksInSemester = 18.0 // Double qildim, hisob-kitob aniq bo'lishi uchun
 
         var lessonIdCounter = 1L
-        val allocationMap = allocations.associateBy { it.subject?.id to it.group?.id }
 
         for (cur in curricula) {
             val subject = cur.subject ?: continue
             val group = cur.group ?: continue
-            val allocation = allocationMap[subject.id to group.id] ?: continue
-            val teacher = allocation.teacher ?: continue
 
-            // 💡 Haftalik para sonini hisoblaymiz (1 para = 2 soat)
-            val weeklyLectures = (subject.lectureHours / 2) / weeksInSemester
-            val weeklyLabs = (subject.labHours / 2) / weeksInSemester
+            // 💡 Haftalik para sonini hisoblaymiz
+            // ceil ishlatamiz: masalan 30 soat bo'lsa, haftasiga 1 para kamlik qiladi,
+            // shuning uchun 2 para qo'yish kerak bo'ladi (yoki 1.0 qilib yaxlitlaydi)
+            val weeklyLectures = kotlin.math.ceil((subject.lectureHours.toDouble() / 2) / weeksInSemester).toInt()
+            val weeklyLabs = kotlin.math.ceil((subject.labHours.toDouble() / 2) / weeksInSemester).toInt()
 
-            log.info("✅ ${subject.name} | Haftalik reja: Ma'ruza=${weeklyLectures}, Lab=${weeklyLabs}")
+            log.info("✅ ${subject.name} | Guruh: ${group.name} | Haftalik: Ma'ruza=${weeklyLectures}, Lab=${weeklyLabs}")
 
             // Ma'ruzalar uchun
             repeat(weeklyLectures) {
                 lessons.add(Lesson(
                     subject = subject,
-                    teacher = null,
+                    teacher = null, // 🔥 AI o'zi teacher_subjects'ga qarab tanlaydi
                     type = LessonType.LECTURE
                 ).apply {
                     id = lessonIdCounter++
-                    groups.add(group)
+                    groups.add(group) // Guruh aniq, vaqt va xona kabi ustoz ham null ketadi
                 })
             }
 
@@ -182,7 +180,7 @@ class MatrixService(
             repeat(weeklyLabs) {
                 lessons.add(Lesson(
                     subject = subject,
-                    teacher = null,
+                    teacher = null, // 🔥 AI o'zi tanlaydi
                     type = LessonType.LABORATORY
                 ).apply {
                     id = lessonIdCounter++
@@ -191,7 +189,7 @@ class MatrixService(
             }
         }
 
-        log.info("📋 Built ${lessons.size} weekly lessons (paralar) for semester=$semester")
+        log.info("📋 Built ${lessons.size} weekly lessons for semester=$semester. AI will assign teachers.")
         return lessons
     }
 }
