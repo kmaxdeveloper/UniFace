@@ -85,7 +85,9 @@ class UserService(
     fun getAllTeachers(): List<Teacher> {
         val teachers = teacherRepository.findAll()
         // Har bir o'qituvchining fanlarini "o'yg'otib" (initialize) qo'yamiz
-        teachers.forEach { it.subjects.size }
+        teachers.forEach {
+            it.subjects.size
+        }
         return teachers
     }
 

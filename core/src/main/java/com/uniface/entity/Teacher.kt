@@ -1,6 +1,7 @@
 package com.uniface.entity
 
 import com.fasterxml.jackson.annotation.JsonBackReference
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import jakarta.persistence.*
 
@@ -32,5 +33,6 @@ class Teacher(
     // --- MANA BU QATORNI QO'SHAMIZ ---
     @OneToMany(mappedBy = "teacher", fetch = FetchType.LAZY)
     @JsonBackReference // JSONda SubjectAllocation ichida Teacher, Teacher ichida yana SubjectAllocation aylanib qolmasligi uchun ✅
+    @JsonIgnore
     var allocations: MutableList<SubjectAllocation> = mutableListOf()
 )
