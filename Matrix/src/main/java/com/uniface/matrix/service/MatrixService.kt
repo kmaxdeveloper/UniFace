@@ -29,18 +29,25 @@ class MatrixService(
 
     private val jobs = ConcurrentHashMap<String, JobStatus>()
 
+    @Transactional // 1. BU MUHIM: Baza bilan aloqa ochiq turganda hamma narsani yuklab olish uchun
     fun startSolving(semester: Int): String {
         val jobId = UUID.randomUUID().toString()
 
         val timeSlots = timeSlotRepository.findAllOrdered()
         val rooms     = roomRepository.findAll()
         val teachers  = teacherRepository.findAll()
-        val lessons   = buildLessons(semester)
+
+        // 🔥 2. Solverga berishdan oldin o'qituvchi fanlarini "uyg'otamiz"
+        teachers.forEach { teacher ->
+            teacher.subjects.size    // subjects yuklandi
+            teacher.allocations.size // allocations ham yuklandi (agar turaversin degan bo'lsak)
+        }
+
+        val lessons = buildLessons(semester)
 
         if (lessons.isEmpty())
             throw IllegalStateException("Semester $semester uchun dars topilmadi")
 
-        // 🔥 YANGI: DATA CHECK
         val capacity = timeSlots.size * rooms.size
         log.info("📊 STATS | lessons=${lessons.size} | rooms=${rooms.size} | timeslots=${timeSlots.size} | capacity=$capacity")
 
@@ -53,11 +60,13 @@ class MatrixService(
             timeSlots = timeSlots,
             rooms     = rooms,
             lessons   = lessons,
-            teachers = teachers
+            teachers  = teachers
         )
 
         jobs[jobId] = JobStatus(jobId, SolveStatus.SOLVING, semester)
 
+        // SolverManager asinxron ishlagani uchun, problem ichidagi hamma narsa
+        // hozir (shu metod ichida) yuklanib bo'lgan bo'lishi shart.
         solverManager.solveBuilder()
             .withProblemId(jobId)
             .withProblem(problem)
