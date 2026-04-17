@@ -22,10 +22,6 @@ interface TeacherRepository : JpaRepository<Teacher, Long> {
     @Query("SELECT t.subjects FROM Teacher t WHERE t.id = :teacherId")
     fun findSubjectsByTeacherId(@Param("teacherId") teacherId: Long): Set<com.uniface.entity.Subject>
 
-    // 4. O'qituvchining barcha guruhlarini olish (UniFace dars boshlash uchun)
-    @Query("SELECT t.groups FROM Teacher t WHERE t.id = :teacherId")
-    fun findGroupsByTeacherId(@Param("teacherId") teacherId: Long): Set<com.uniface.entity.StudentGroup>
-
     // 5. Fan bo'yicha o'qituvchilarni topish (Mizan AI'da topshiriqni kim berganini aniqlashda)
     @Query("SELECT t FROM Teacher t JOIN t.subjects s WHERE s.id = :subjectId")
     fun findAllBySubjectId(@Param("subjectId") Long: Long): List<Teacher>
