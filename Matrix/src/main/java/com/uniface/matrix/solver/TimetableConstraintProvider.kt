@@ -21,6 +21,8 @@ class TimetableConstraintProvider : ConstraintProvider {
         lectureNotInLab(factory),
         teacherMustBeQualified(factory),
         teacherMaxLessonsPerDay(factory),
+        minimizeGroupGaps(factory),
+        minimizeTeacherGaps(factory),
 
         // SOFT
         preferEarlyPairs(factory),
@@ -90,6 +92,30 @@ class TimetableConstraintProvider : ConstraintProvider {
             .filter { it.type == LessonType.LECTURE && it.room?.isLaboratory == true }
             .penalize(HardSoftScore.ONE_HARD)
             .asConstraint("Lecture not in lab room")
+
+    private fun minimizeGroupGaps(factory: ConstraintFactory): Constraint =
+        factory.forEach(Lesson::class.java)
+            .filter { it.timeslot != null && it.groups.isNotEmpty() }
+            .groupBy(
+                { it.groups.first().id },
+                { it.timeslot!!.dayOfWeek },
+                ConstraintCollectors.count()
+            )
+            .filter { _, _, count -> count > 1 }
+            .penalize(HardSoftScore.ONE_HARD) { _, _, count -> count - 1 }
+            .asConstraint("Minimize gaps in group schedule")
+
+    private fun minimizeTeacherGaps(factory: ConstraintFactory): Constraint =
+        factory.forEach(Lesson::class.java)
+            .filter { it.timeslot != null && it.teacher != null }
+            .groupBy(
+                { it.teacher!!.id },
+                { it.timeslot!!.dayOfWeek },
+                ConstraintCollectors.count()
+            )
+            .filter { _, _, count -> count > 1 }
+            .penalize(HardSoftScore.ONE_HARD) { _, _, count -> count - 1 }
+            .asConstraint("Minimize gaps in teacher schedule")
 
     // ───────────────── SOFT ─────────────────
 
