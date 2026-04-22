@@ -14,7 +14,8 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
     fun findByTeacherIdAndIsActiveTrue(teacherId: Long): Lesson?
 
     // 2. O'qituvchi username orqali faol darsni topish (Service-da username ishlatganimiz uchun)
-    fun findByTeacherUserUsernameAndIsActiveTrue(username: String): Lesson?
+    // LessonRepository.kt ichida
+    fun findByTeacherUserUsernameAndIsActiveTrue(username: String): List<Lesson>
 
     // 3. Ma'lum bir guruh uchun hozirda faol dars bor-yo'qligini tekshirish
     // (Talaba skaner qilganda o'sha guruh darsi rostdan ham ochiqligini tekshirish uchun)
