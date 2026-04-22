@@ -39,7 +39,7 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
     fun findByTeacher_Id(teacherId: Long): List<Lesson>
 
     @Query("""
-        SELECT DISTINCT l FROM Lesson l
+        SELECT l FROM Lesson l
         JOIN l.groups g
         WHERE g.id = :groupId
         AND l.timeslot IS NOT NULL
