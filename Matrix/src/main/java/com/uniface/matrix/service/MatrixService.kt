@@ -93,6 +93,16 @@ class MatrixService(
     fun getTeacherTimetable(teacherId: Long): List<Lesson> =
         lessonRepository.findByTeacherId(teacherId)
 
+    fun getTeacherTimetableByUsername(username: String): List<Lesson> {
+        return lessonRepository.findByTeacherUsername(username)
+    }
+
+    fun getStudentTimetableByUsername(username: String): List<Lesson> {
+        // 1. Repository orqali username bo'yicha darslarni topamiz
+        // (Buning uchun LessonRepository-da boyagi JOIN-li so'rov bo'lishi kerak)
+        return lessonRepository.findLessonsByStudentUsername(username)
+    }
+
     fun getRoomTimetable(roomId: Long): List<Lesson> =
         lessonRepository.findByRoomId(roomId)
 

@@ -14,7 +14,7 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
     fun findByTeacherIdAndIsActiveTrue(teacherId: Long): Lesson?
 
     // 2. O'qituvchi username orqali faol darsni topish (Service-da username ishlatganimiz uchun)
-    //fun findByTeacherUserUsernameAndIsActiveTrue(username: String): Lesson?
+    fun findByTeacherUserUsernameAndIsActiveTrue(username: String): Lesson?
 
     // 3. Ma'lum bir guruh uchun hozirda faol dars bor-yo'qligini tekshirish
     // (Talaba skaner qilganda o'sha guruh darsi rostdan ham ochiqligini tekshirish uchun)
@@ -65,11 +65,21 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
     """)
     fun findByRoomId(@Param("roomId") roomId: Long): List<Lesson>
 
-    fun findByTeacherUserUsernameAndSubjectIdAndGroupsIdInAndIsActiveTrue(
-        username: String,
-        subjectId: Long,
-        groupIds: List<Long>
-    ): List<Lesson>
+    @Query("""
+    SELECT l FROM Lesson l 
+    JOIN l.teacher t 
+    JOIN t.user u 
+    WHERE u.username = :username 
+    AND l.timeslot IS NOT NULL 
+    ORDER BY l.timeslot.dayOfWeek, l.timeslot.pairNumber
+""")
+    fun findByTeacherUsername(@Param("username") username: String): List<Lesson>
 
-    fun findByTeacherUserUsernameAndIsActiveTrue(username: String): List<Lesson>
+    @Query("""
+    SELECT l FROM Lesson l 
+    JOIN l.groups g
+    WHERE g.id = (SELECT s.group.id FROM Student s WHERE s.user.username = :username)
+    AND l.timeslot IS NOT NULL
+""")
+    fun findLessonsByStudentUsername(@Param("username") username: String): List<Lesson>
 }
