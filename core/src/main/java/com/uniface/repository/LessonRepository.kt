@@ -14,7 +14,7 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
     fun findByTeacherIdAndIsActiveTrue(teacherId: Long): Lesson?
 
     // 2. O'qituvchi username orqali faol darsni topish (Service-da username ishlatganimiz uchun)
-    fun findByTeacherUserUsernameAndIsActiveTrue(username: String): Lesson?
+    //fun findByTeacherUserUsernameAndIsActiveTrue(username: String): Lesson?
 
     // 3. Ma'lum bir guruh uchun hozirda faol dars bor-yo'qligini tekshirish
     // (Talaba skaner qilganda o'sha guruh darsi rostdan ham ochiqligini tekshirish uchun)
@@ -64,4 +64,12 @@ interface LessonRepository : JpaRepository<Lesson, Long> {
         ORDER BY l.timeslot.dayOfWeek, l.timeslot.pairNumber
     """)
     fun findByRoomId(@Param("roomId") roomId: Long): List<Lesson>
+
+    fun findByTeacherUserUsernameAndSubjectIdAndGroupsIdInAndIsActiveTrue(
+        username: String,
+        subjectId: Long,
+        groupIds: List<Long>
+    ): List<Lesson>
+
+    fun findByTeacherUserUsernameAndIsActiveTrue(username: String): List<Lesson>
 }

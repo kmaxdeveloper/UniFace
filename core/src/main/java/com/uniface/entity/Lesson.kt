@@ -50,5 +50,5 @@ class Lesson(
     var startTime: LocalDateTime = LocalDateTime.now(),
     var endTime: LocalDateTime? = null,
 
-    var isActive: Boolean = true
+    var isActive: Boolean = false
 )

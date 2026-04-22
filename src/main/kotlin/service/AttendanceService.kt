@@ -146,37 +146,52 @@ class AttendanceService(
         val teacher = teacherRepository.findByUserUsername(request.teacherUsername ?: throw IllegalArgumentException("Username bo'sh!"))
             ?: throw EntityNotFoundException("O'qituvchi topilmadi")
 
-        // 2. XAVFSIZLIK: O'qituvchida allaqachon faol dars bormi?
-        // Agar bo'lsa, uni avtomatik yopamiz yoki xato beramiz.
-        val activeLesson = lessonRepository.findByTeacherUserUsernameAndIsActiveTrue(teacher.user.username)
-        if (activeLesson != null) {
-            // Variant A: Eskisini yopish
-            activeLesson.isActive = false
-            activeLesson.endTime = LocalDateTime.now()
-            lessonRepository.save(activeLesson)
-            // Variant B: throw IllegalStateException("Sizda hali yakunlanmagan dars bor!")
-        }
+        // 2. TOZALASH: Matrix rejalashtirgan yoki ochiq qolgan barcha faol darslarni ro'yxat sifatida olamiz
+        // Repository'da bu metod List<Lesson> qaytarishi shart!
+        val allActiveLessons = lessonRepository.findByTeacherUserUsernameAndIsActiveTrue(teacher.user.username)
 
-        // 3. Fanni tekshirish
+        // 3. Fanni va guruhlarni tekshirish
         val subject = subjectRepository.findById(request.subjectId)
             .orElseThrow { EntityNotFoundException("Fan topilmadi") }
 
-        // 4. Guruhlarni tekshirish (To'liqligini tekshiramiz)
         val groups = groupRepository.findAllById(request.groupIds)
         if (groups.size != request.groupIds.size) {
-            throw EntityNotFoundException("Ba'zi guruhlar topilmadi! (Kiritilgan: ${request.groupIds.size}, Topilgan: ${groups.size})")
+            throw EntityNotFoundException("Ba'zi guruhlar topilmadi!")
         }
 
-        val newLesson = Lesson(
-            subject = subject,
-            teacher = teacher,
-            groups = groups.toMutableSet(),
-            type = request.lessonType,
-            startTime = LocalDateTime.now(),
-            isActive = true
-        )
+        // 4. MATRIX LOGIKASI: Agar Matrix allaqachon shu fan uchun dars yaratgan bo'lsa, o'shani ishlatamiz
+        val plannedLesson = allActiveLessons.find { it.subject?.id == request.subjectId }
 
-        val savedLesson = lessonRepository.save(newLesson)
-        return savedLesson.id ?: throw IllegalStateException("Bazaga saqlashda ID generatsiya bo'lmadi")
+        return if (plannedLesson != null) {
+            // Bor darsni yangilaymiz (Matrix yaratgan darsni real darsga aylantiramiz)
+            plannedLesson.startTime = LocalDateTime.now()
+            plannedLesson.type = request.lessonType
+            plannedLesson.groups = groups.toMutableSet()
+            plannedLesson.isActive = true
+
+            // Agar boshqa (masalan, Matrix yaratgan boshqa soatdagi) darslar bo'lsa, ularni yopamiz
+            allActiveLessons.filter { it.id != plannedLesson.id }.forEach {
+                it.isActive = false
+                lessonRepository.save(it)
+            }
+
+            lessonRepository.save(plannedLesson).id!!
+        } else {
+            // Agar Matrix bu fanni rejalashtirmagan bo'lsa, yangi dars ochishdan oldin hammasini yopamiz
+            allActiveLessons.forEach {
+                it.isActive = false
+                lessonRepository.save(it)
+            }
+
+            val newLesson = Lesson(
+                subject = subject,
+                teacher = teacher,
+                groups = groups.toMutableSet(),
+                type = request.lessonType,
+                startTime = LocalDateTime.now(),
+                isActive = true
+            )
+            lessonRepository.save(newLesson).id!!
+        }
     }
 }
