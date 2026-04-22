@@ -70,16 +70,6 @@ class MatrixController(
         return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
     }
 
-    @GetMapping("/timetable/student/{username}")
-    fun studentTimetable(
-        @PathVariable username: String
-    ): ResponseEntity<ApiResponse<List<MatrixLessonDto>>> {
-        // Bu yerda matrixService orqali servisdagi metodni chaqiramiz
-        val lessons = matrixService.getStudentTimetableByUsername(username)
-
-        return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
-    }
-
     // ──────────────────────────────────────────────────────
     // O'QITUVCHI JADVALI
     // GET /api/matrix/timetable/teacher/{teacherId}
@@ -89,12 +79,6 @@ class MatrixController(
         @PathVariable teacherId: Long
     ): ResponseEntity<ApiResponse<List<MatrixLessonDto>>> {
         val lessons = matrixService.getTeacherTimetable(teacherId)
-        return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
-    }
-
-    @GetMapping("/timetable/teacher/{username}")
-    fun teacherTimetable(@PathVariable username: String): ResponseEntity<ApiResponse<List<MatrixLessonDto>>> {
-        val lessons = matrixService.getTeacherTimetableByUsername(username)
         return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
     }
 

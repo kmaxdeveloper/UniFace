@@ -1,6 +1,10 @@
 package com.uniface.controller.teacher
 
+import com.uniface.data.ApiResponse
 import com.uniface.dto.StartLessonRequest
+import com.uniface.dto.matrix.MatrixLessonDto
+import com.uniface.entity.Lesson
+import com.uniface.matrix.service.MatrixService
 import com.uniface.repository.SubjectRepository
 import com.uniface.repository.TeacherRepository
 import com.uniface.repository.UserRepository
@@ -28,7 +32,8 @@ class TeacherController(
     private val subjectRepository: SubjectRepository,
     private val attendanceService: AttendanceService,
     private val userRepository: UserRepository,
-    private val teacherRepository: TeacherRepository
+    private val teacherRepository: TeacherRepository,
+    private val matrixService: MatrixService
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -100,4 +105,27 @@ class TeacherController(
         // 'Set'ni 'List'ga o'girib yuborsang, frontendda array bo'lib boradi
         return ResponseEntity.ok(teacher.subjects.toList())
     }
+
+    @GetMapping("/timetable/{username}")
+    fun teacherTimetable(@PathVariable username: String): ResponseEntity<ApiResponse<List<MatrixLessonDto>>> {
+        val lessons = matrixService.getTeacherTimetableByUsername(username)
+        return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
+    }
+}
+
+private fun List<Lesson>.toDto(): List<MatrixLessonDto> = map { l ->
+    MatrixLessonDto(
+        lessonId   = l.id ?: 0L,
+        subject    = l.subject?.name ?: "",
+        teacher    = l.teacher?.fullName ?: "",
+        groups     = l.groups.map { it.name },
+        type       = l.type.name,
+        day        = l.timeslot?.dayOfWeek?.name ?: "—",
+        pairNumber = l.timeslot?.pairNumber ?: 0,
+        startTime  = l.timeslot?.startTime?.toString() ?: "—",
+        endTime    = l.timeslot?.endTime?.toString() ?: "—",
+        room       = l.room?.roomNumber ?: "—",
+        building   = l.room?.building?.name ?: "—",
+        isLab      = l.room?.isLaboratory ?: false
+    )
 }
