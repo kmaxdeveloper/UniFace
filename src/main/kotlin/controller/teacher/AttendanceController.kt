@@ -64,6 +64,7 @@ class AttendanceController(
 
     @PostMapping("/teacher/start-lesson")
     fun startLesson(@RequestBody request: StartLessonRequest): ResponseEntity<Any> {
+        println("DEBUG: startLesson called with request: $request")
         return try {
             // Darsni boshlash va ID ni olish
             val lessonId = attendanceService.startNewLesson(request)
@@ -71,14 +72,17 @@ class AttendanceController(
             println("INFO: Yangi dars boshlandi. ID: $lessonId, Ustoz: ${request.teacherUsername}")
             ResponseEntity.ok(lessonId)
         } catch (e: EntityNotFoundException) {
+            println("ERROR: EntityNotFoundException: ${e.message}")
             // Masalan: Fan yoki Guruh topilmasa
             ResponseEntity.status(404).body(mapOf("error" to e.message))
         } catch (e: IllegalStateException) {
+            println("ERROR: IllegalStateException: ${e.message}")
             // Masalan: O'qituvchida allaqachon faol dars bo'lsa
             ResponseEntity.status(409).body(mapOf("error" to e.message))
         } catch (e: Exception) {
+            println("ERROR: Unexpected exception: ${e.message}")
+            e.printStackTrace()
             // Kutilmagan boshqa xatolar
-            println("ERROR: Dars boshlashda xatolik: ${e.message}")
             ResponseEntity.status(500).body(mapOf("error" to "Serverda ichki xatolik yuz berdi"))
         }
     }
@@ -103,4 +107,28 @@ class AttendanceController(
     @GetMapping("/student/attendance/{studentId}")
     fun getStudentAttendance(@PathVariable studentId: String) =
         ResponseEntity.ok(attendanceService.getStudentAttendance(studentId))
+
+    @PostMapping("/teacher/scan-student", produces = [MediaType.TEXT_PLAIN_VALUE])
+    fun teacherScanStudent(@RequestBody request: ScanRequest): ResponseEntity<Any> {
+        return try {
+            // 1. Servis orqali davomatni belgilash
+            val result = attendanceService.markAttendance(
+                request.studentId,
+                request.qrToken
+            )
+
+            // 2. WebSocket orqali xabar yuborish
+            val lessonId = qrService.getLessonIdFromToken(request.qrToken)
+            messagingTemplate.convertAndSend("/topic/lesson/$lessonId", result)
+
+            // Muvaffaqiyatli javob (String)
+            ResponseEntity.ok(result)
+        } catch (e: Exception) {
+            // Xatolik xabarini toza matn ko'rinishida qaytaramiz
+            ResponseEntity
+                .status(400)
+                .contentType(MediaType.TEXT_PLAIN)
+                .body(e.message ?: "Serverda kutilmagan xatolik yuz berdi")
+        }
+    }
 }
