@@ -64,6 +64,9 @@ class MatrixController(
         @PathVariable groupId: Long
     ): ResponseEntity<ApiResponse<List<MatrixLessonDto>>> {
         val lessons = matrixService.getGroupTimetable(groupId)
+        // Debug log qo'shamiz
+        println("DEBUG: Group $groupId uchun ${lessons.size} ta dars topildi")
+        lessons.forEach { println("  - ${it.subject?.name} | ${it.teacher?.fullName} | ${it.timeslot?.dayOfWeek}") }
         return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
     }
 
