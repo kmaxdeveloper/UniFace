@@ -70,11 +70,15 @@ class SecurityConfig(
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
 
-        // MUHIM: SockJS bilan localhost va domendan ulanishda patterns ishonchliroq
+        // MUHIM: Ham HTTP, ham HTTPS protokollarini va subdomenlarni qamrab olamiz
         configuration.allowedOriginPatterns = listOf(
             "http://localhost:5173",
-            "http://api.timora.uz*",
-            "http://timora.uz*"
+            "https://timora.uz",
+            "https://www.timora.uz",
+            "https://api.timora.uz",
+            "http://timora.uz",      // Ba'zan localhost testlar uchun kerak
+            "http://api.timora.uz",
+            "https://*.timora.uz"    // Barcha subdomenlar uchun (masalan neura.timora.uz)
         )
 
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
