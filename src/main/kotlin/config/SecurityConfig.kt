@@ -78,7 +78,9 @@ class SecurityConfig(
             "https://api.timora.uz",
             "http://timora.uz",      // Ba'zan localhost testlar uchun kerak
             "http://api.timora.uz",
-            "https://*.timora.uz"    // Barcha subdomenlar uchun (masalan neura.timora.uz)
+            "https://*.timora.uz", // Barcha subdomenlar uchun (masalan neura.timora.uz)
+            "http://api.timora.uz*",
+            "http://timora.uz*"
         )
 
         configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
