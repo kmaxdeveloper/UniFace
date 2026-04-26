@@ -53,18 +53,9 @@ class LoggingAspect(private val systemLogRepository: SystemLogRepository) {
 
         // Agar foydalanuvchi hali tizimga kirmagan bo'lsa (Login jarayoni)
         if (username == "anonymousUser" || username == "ANONYMOUS") {
-            // Metod parametrlarini tekshiramiz (LoginRequest kabi obyekt bormi?)
             joinPoint.args.forEach { arg ->
-                try {
-                    // Agar bu LoginRequest bo'lsa, uning ichidan usernameni olamiz
-                    val usernameField = arg::class.java.getDeclaredField("username")
-                    usernameField.isAccessible = true
-                    val value = usernameField.get(arg) as? String
-                    if (!value.isNullOrBlank()) {
-                        username = value
-                    }
-                } catch (e: Exception) {
-                    // Username maydoni bo'lmasa yoki xato bo'lsa o'tkazib yuboramiz
+                if (arg != null) {
+                    username = tryToGetUsername(arg) ?: username
                 }
             }
         }
@@ -88,6 +79,33 @@ class LoggingAspect(private val systemLogRepository: SystemLogRepository) {
         )
 
         systemLogRepository.save(log)
+    }
+
+    private fun tryToGetUsername(arg: Any): String? {
+        val possibleFields = listOf("username", "login", "user", "fullName")
+        val clazz = arg::class.java
+        
+        // 1. Maydonlarni tekshirish
+        for (fieldName in possibleFields) {
+            try {
+                val field = clazz.getDeclaredField(fieldName)
+                field.isAccessible = true
+                val value = field.get(arg)?.toString()
+                if (!value.isNullOrBlank()) return value
+            } catch (e: Exception) {}
+        }
+        
+        // 2. Metodlarni tekshirish (getters)
+        for (fieldName in possibleFields) {
+            try {
+                val methodName = "get" + fieldName.replaceFirstChar { it.uppercase() }
+                val method = clazz.getMethod(methodName)
+                val value = method.invoke(arg)?.toString()
+                if (!value.isNullOrBlank()) return value
+            } catch (e: Exception) {}
+        }
+        
+        return null
     }
 
     private fun getClientIp(request: HttpServletRequest?): String {
