@@ -13,19 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'corretto'
-          cache: gradle
-
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-
-      - name: Build with Gradle
-        run: ./gradlew build -x test
-
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -34,8 +21,19 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd ~/UniFace || { echo "Papka topilmadi!"; exit 1; }
+            
+            echo "📥 Kod yangilanmoqda..."
             git pull origin master
+            
+            echo "🏗️ Serverda build jarayoni boshlandi..."
+            chmod +x gradlew
+            ./gradlew build -x test
+            
+            echo "🛑 Konteynerlar qayta yuklanmoqda..."
             docker-compose down
             docker-compose up --build -d
+            
+            echo "🧹 Tozalash..."
             docker image prune -f
+            echo "✅ Hammasi muvaffaqiyatli yakunlandi!"
             docker image prune -f
