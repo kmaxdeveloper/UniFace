@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - main
+      - master
 
 jobs:
   deploy:
@@ -21,7 +21,7 @@ jobs:
           cache: gradle
 
       - name: Build with Gradle
-        run: ./gradlew build -x test # Testlarni o'tkazib yuboramiz (deployment tezroq bo'lishi uchun)
+        run: ./gradlew build -x test
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
@@ -31,18 +31,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /home/${{ secrets.SERVER_USER }}/UniFace
-            git pull origin main
-            
-            # .env faylini yaratish yoki yangilash
-            cat <<EOF > .env
-            DB_NAME=${{ secrets.DB_NAME }}
-            DB_USER=${{ secrets.DB_USER }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            AWS_ACCESS_KEY=${{ secrets.MY_AWS_ACCESS_KEY }}
-            AWS_SECRET_KEY=${{ secrets.MY_AWS_SECRET_KEY }}
-            JWT_SECRET=${{ secrets.MY_JWT_SECRET }}
-            EOF
-            
+            git pull origin master
             docker-compose down
             docker-compose up --build -d
             docker image prune -f
