@@ -1,0 +1,48 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+          cache: gradle
+
+      - name: Build with Gradle
+        run: ./gradlew build -x test # Testlarni o'tkazib yuboramiz (deployment tezroq bo'lishi uchun)
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /home/${{ secrets.SERVER_USER }}/UniFace
+            git pull origin main
+            
+            # .env faylini yaratish yoki yangilash
+            cat <<EOF > .env
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USER=${{ secrets.DB_USER }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            AWS_ACCESS_KEY=${{ secrets.MY_AWS_ACCESS_KEY }}
+            AWS_SECRET_KEY=${{ secrets.MY_AWS_SECRET_KEY }}
+            JWT_SECRET=${{ secrets.MY_JWT_SECRET }}
+            EOF
+            
+            docker-compose down
+            docker-compose up --build -d
+            docker image prune -f
