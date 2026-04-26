@@ -5,6 +5,8 @@ import com.uniface.dto.LoginRequest
 import com.uniface.repository.StudentRepository
 import com.uniface.repository.TeacherRepository
 import com.uniface.security.JwtUtils
+import com.uniface.config.Loggable
+import com.uniface.repository.SystemLogRepository
 import com.uniface.repository.UserRepository
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -17,8 +19,10 @@ class AuthService(
     private val jwtUtils: JwtUtils,
     private val userRepository: UserRepository,
     private val studentRepository: StudentRepository,
-    private val teacherRepository: TeacherRepository
+    private val teacherRepository: TeacherRepository,
+    private val systemLogRepository: SystemLogRepository
 ) {
+    @Loggable(action = "USER_LOGIN", category = "AUTH")
     fun authenticate(request: LoginRequest): Map<String, Any> {
         // 1. Login va parolni Spring Security orqali tekshirish
         authenticationManager.authenticate(

@@ -36,9 +36,10 @@ class AttendanceIntegrationTest {
         // (student, subject, group, teacher) - hammasini berish shart!
         val attendance = Attendance(
             student = student,
-            subject = null,   // Agar hozircha yo'q bo'lsa null beramiz
-            group = null,     // Agar hozircha yo'q bo'lsa null beramiz
-            teacher = null    // Agar hozircha yo'q bo'lsa null beramiz
+            subject = null,
+            group = null,
+            teacher = null,
+            lesson = null
         ).apply {
             // Konstruktorda yo'q maydonlarni apply ichida beramiz
             this.timestamp = LocalDateTime.now()

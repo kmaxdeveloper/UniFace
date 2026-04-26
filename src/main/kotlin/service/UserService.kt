@@ -1,5 +1,7 @@
 package com.uniface.service
 
+import com.uniface.config.Loggable
+
 import com.uniface.data.Role
 import com.uniface.dto.TeacherDto
 import com.uniface.entity.User
@@ -23,6 +25,7 @@ class UserService(
 ) {
 
     @Transactional
+    @Loggable(action = "CREATE_TEACHER", category = "DATABASE")
     fun saveTeacher(dto: TeacherDto) {
         // 1. Userni yaratamiz
         val user = userRepository.save(User(
@@ -53,6 +56,7 @@ class UserService(
     }
 
     @Transactional
+    @Loggable(action = "UPDATE_TEACHER", category = "DATABASE")
     fun updateTeacherFull(userId: Long, dto: TeacherUpdateDto) {
         val user = userRepository.findById(userId)
             .orElseThrow { Exception("Foydalanuvchi topilmadi!") }
