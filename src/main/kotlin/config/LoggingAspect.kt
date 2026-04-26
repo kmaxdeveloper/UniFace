@@ -17,11 +17,18 @@ import java.time.LocalDateTime
 @Component
 class LoggingAspect(private val systemLogRepository: SystemLogRepository) {
 
-    @Around("@annotation(loggable)")
-    fun logExecution(joinPoint: ProceedingJoinPoint, loggable: Loggable): Any? {
+    @Around("@annotation(com.uniface.config.Loggable) || execution(* com.uniface.service.*.*(..))")
+    fun logExecution(joinPoint: ProceedingJoinPoint): Any? {
+        val signature = joinPoint.signature as MethodSignature
+        val loggable = signature.method.getAnnotation(Loggable::class.java)
+        
         val start = System.currentTimeMillis()
         var status = "SUCCESS"
         var details = ""
+
+        // Agar annotatsiya bo'lmasa, metod nomidan action yasaymiz
+        val actionName = loggable?.action ?: signature.method.name.uppercase()
+        val categoryName = loggable?.category ?: "SERVICE"
 
         try {
             val result = joinPoint.proceed()
@@ -32,23 +39,46 @@ class LoggingAspect(private val systemLogRepository: SystemLogRepository) {
             details = "Xatolik: ${e.message}"
             throw e
         } finally {
-            saveLog(loggable, status, details)
+            saveLog(joinPoint, actionName, categoryName, status, details)
         }
     }
 
-    private fun saveLog(loggable: Loggable, status: String, details: String) {
+    private fun saveLog(joinPoint: ProceedingJoinPoint, action: String, category: String, status: String, details: String) {
         val request = (RequestContextHolder.getRequestAttributes() as? ServletRequestAttributes)?.request
         val ipAddress = getClientIp(request)
         val auth = SecurityContextHolder.getContext().authentication
         
-        val username = auth?.name ?: "ANONYMOUS"
-        val role = auth?.authorities?.joinToString { it.authority } ?: "NONE"
+        var username = auth?.name ?: "ANONYMOUS"
+        var role = auth?.authorities?.joinToString { it.authority } ?: "NONE"
+
+        // Agar foydalanuvchi hali tizimga kirmagan bo'lsa (Login jarayoni)
+        if (username == "anonymousUser" || username == "ANONYMOUS") {
+            // Metod parametrlarini tekshiramiz (LoginRequest kabi obyekt bormi?)
+            joinPoint.args.forEach { arg ->
+                try {
+                    // Agar bu LoginRequest bo'lsa, uning ichidan usernameni olamiz
+                    val usernameField = arg::class.java.getDeclaredField("username")
+                    usernameField.isAccessible = true
+                    val value = usernameField.get(arg) as? String
+                    if (!value.isNullOrBlank()) {
+                        username = value
+                    }
+                } catch (e: Exception) {
+                    // Username maydoni bo'lmasa yoki xato bo'lsa o'tkazib yuboramiz
+                }
+            }
+        }
+
+        // Rolni chiroyli ko'rinishga keltiramiz (ROLE_ qismini olib tashlash mumkin yoki shunday qoldirish)
+        if (role.contains("ROLE_ANONYMOUS")) {
+            role = "GUEST"
+        }
 
         val log = SystemLog(
             username = username,
             role = role,
-            action = loggable.action,
-            category = loggable.category,
+            action = action,
+            category = category,
             details = details,
             ipAddress = ipAddress,
             method = request?.method ?: "N/A",
