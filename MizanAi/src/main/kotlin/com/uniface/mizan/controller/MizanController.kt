@@ -17,14 +17,17 @@ class MizanController(
 ) {
 
     @PostMapping("/evaluate")
-    fun evaluateDocument(@RequestParam("file") file: MultipartFile): Mono<ResponseEntity<GeminiEvaluationResponse>> {
+    fun evaluateDocument(
+        @RequestParam("file") file: MultipartFile,
+        @RequestParam(value = "subjectName", required = false) subjectName: String?
+    ): Mono<ResponseEntity<GeminiEvaluationResponse>> {
         return try {
             val extractedText = documentParser.parseFile(file)
             
             if (extractedText.isBlank()) {
                 Mono.just(ResponseEntity.badRequest().build())
             } else {
-                geminiService.evaluateDocument(extractedText)
+                geminiService.evaluateDocument(extractedText, subjectName)
                     .map { response -> ResponseEntity.ok(response) }
             }
         } catch (e: Exception) {

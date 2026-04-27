@@ -18,23 +18,33 @@ class GeminiService(
 
     private val geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
-    fun evaluateDocument(text: String): Mono<GeminiEvaluationResponse> {
+    fun evaluateDocument(text: String, subjectName: String? = null): Mono<GeminiEvaluationResponse> {
+        val subjectContext = if (!subjectName.isNullOrBlank()) "Sen aynan '$subjectName' fani bo'yicha qattiqqo'l va adolatli universitet o'qituvchisisan." else "Sen universitet o'qituvchisisan."
+        
         val prompt = """
-            Siz universitet talabalarining ishi(referat, taqdimot, kod)ni baholaydigan Mizan AI tizimisiz.
-            Quyida talaba tomonidan yuborilgan fayldagi matn berilgan. Matnni o'qib, uni quyidagi mezonlar bo'yicha baholang (0-100%):
-            1. Originality (Originallik)
+            $subjectContext
+            Quyida senga talaba tomonidan yozilgan topshiriq (referat, maqola yoki kod) taqdim etiladi.
+            Vazifang - bu ishni diqqat bilan o'qib, maksimal 100 ballik tizimda adolatli baholash.
+            
+            Shuningdek, quyidagilarga qat'iy e'tibor qarat:
+            1. Ishning AI (Sun'iy intellekt) tomonidan yozilganlik ehtimolini aniqla.
+            2. Plagiat (ko'chirmachilik) bor-yo'qligini tekshir.
+            3. Aynan $subjectName fani doirasida yozilganmi yoki mavzudan chetlashganmi, shuni bahola.
+
+            Quyidagi 4 ta mezon bo'yicha baho ber (har biri 0-100%):
+            1. Originality (Originallik, AI yoki plagiat emasligi)
             2. Structural Integrity (Tuzilish va Strukturasi)
-            3. Technical Depth (Texnik chuqurlik)
+            3. Technical Depth (Texnik chuqurlik, fan doirasidagi bilim)
             4. Clarity & Logic (Mantiq va tushunarlilik)
             
-            Umumiy ball (score: 0-100) va baho (grade: A, B, C, D, F) chiqaring.
-            Shuningdek, o'zbek tilida qisqa va aniq fikr-mulohaza (feedback) yozing.
+            Umumiy ball (score: 0-100) va harfiy baho (grade: A, B, C, D, F) chiqaring.
+            Shuningdek, o'zbek tilida aniq, asosli va foydali fikr-mulohaza (feedback) yozing. Feedback da albatta AI ulushi va plagiat bor-yo'qligiga to'xtalib o'ting.
             
-            Iltimos, faqat quyidagi JSON formatida javob bering, boshqa hech qanday so'z qo'shmang (hech qanday markdown emas, toza JSON):
+            Iltimos, faqat quyidagi JSON formatida javob bering, boshqa hech qanday izoh yoki belgilar (```json kabi) qo'shmang:
             {
               "score": 85,
               "grade": "B",
-              "feedback": "Sizning ishingiz yaxshi...",
+              "feedback": "Ishingiz yaxshi yozilgan, ammo xulosa qismida AI yordamidan foydalanilganlik belgilari bor...",
               "criteria": [
                 { "name": "Originality", "score": 90 },
                 { "name": "Structural Integrity", "score": 80 },
