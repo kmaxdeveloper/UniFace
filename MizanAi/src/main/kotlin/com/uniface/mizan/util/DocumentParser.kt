@@ -25,16 +25,16 @@ class DocumentParser {
     }
 
     private fun extractTextFromPdf(inputStream: InputStream): String {
-        PDDocument.load(inputStream).use { document ->
+        return PDDocument.load(inputStream).use { document ->
             val pdfStripper = PDFTextStripper()
-            return pdfStripper.getText(document)
+            pdfStripper.getText(document)
         }
     }
 
     private fun extractTextFromDocx(inputStream: InputStream): String {
-        XWPFDocument(inputStream).use { document ->
+        return XWPFDocument(inputStream).use { document ->
             val extractor = XWPFWordExtractor(document)
-            return extractor.text
+            extractor.text
         }
     }
 

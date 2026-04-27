@@ -19,7 +19,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // PDFBox for PDF parsing
-    implementation("org.apache.pdfbox:pdfbox:3.0.1")
+    implementation("org.apache.pdfbox:pdfbox:2.0.30")
 
     // POI for DOCX parsing
     implementation("org.apache.poi:poi-ooxml:5.2.3")
