@@ -18,3 +18,7 @@ timefold:
       # 'best-score-feasible: true' degan joyini o'chirib tashla
       # O'rniga faqat vaqt yoki ball limitini qo'yish kerak:
       spent-limit: 1m # Hisoblash uchun maksimal 30 soniya vaqt beradi
+
+gemini:
+  api:
+    key: ${GEMINI_API_KEY:}
