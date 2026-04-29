@@ -10,7 +10,6 @@ import com.uniface.mizan.util.DocumentParser
 
 @RestController
 @RequestMapping("/api/v1/teacher/mizan")
-@CrossOrigin(origins = ["*"]) // Frontend bilan ishlashi uchun
 class MizanController(
     private val documentParser: DocumentParser,
     private val geminiService: GeminiService

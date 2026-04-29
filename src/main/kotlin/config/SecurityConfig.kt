@@ -50,6 +50,7 @@ class SecurityConfig(
                 auth.requestMatchers("/api/v1/student/**").hasAnyAuthority("ROLE_STUDENT", "ROLE_ADMIN")
 
                 // Qolgan rollar bo'yicha cheklovlar
+                auth.requestMatchers("/api/v1/teacher/mizan/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
                 auth.requestMatchers("/api/v1/teacher/generate-qr/**").hasAnyAuthority("ROLE_TEACHER", "ROLE_ADMIN")
                 auth.requestMatchers("/api/v1/admin/groups/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/admin/subjects/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
