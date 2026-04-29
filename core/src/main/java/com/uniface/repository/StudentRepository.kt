@@ -21,6 +21,8 @@ import org.springframework.stereotype.Repository
     // User ID orqali talabani topish (OneToOne bog'liqlik uchun)
     fun findByUserId(userId: Long): Student?
 
+    fun findByUserUsername(username: String): Student?
+
     // Guruh nomi bo'yicha qidirish (Admin paneli uchun foydali)
     fun findAllByGroupName(groupName: String): List<Student>
     fun findAllByGroupId(groupId: Long): List<Student>

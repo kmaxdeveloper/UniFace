@@ -3,7 +3,6 @@ package com.uniface.service
 import com.uniface.dto.*
 import com.uniface.entity.Attendance
 import com.uniface.entity.Lesson
-import java.time.format.DateTimeFormatter
 import com.uniface.exception.AlreadyMarkedException
 import com.uniface.exception.InvalidAttendanceException
 import com.uniface.exception.StudentNotFoundException
