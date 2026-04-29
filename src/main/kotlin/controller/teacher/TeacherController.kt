@@ -4,9 +4,13 @@ import com.uniface.data.ApiResponse
 import com.uniface.dto.StartLessonRequest
 import com.uniface.dto.matrix.MatrixLessonDto
 import com.uniface.entity.Lesson
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.DayOfWeek
 import com.uniface.matrix.service.MatrixService
 import com.uniface.repository.SubjectRepository
 import com.uniface.repository.TeacherRepository
+import com.uniface.repository.TopicRepository
 import com.uniface.repository.UserRepository
 import com.uniface.service.AttendanceService
 import com.uniface.service.FaceService
@@ -33,7 +37,8 @@ class TeacherController(
     private val attendanceService: AttendanceService,
     private val userRepository: UserRepository,
     private val teacherRepository: TeacherRepository,
-    private val matrixService: MatrixService
+    private val matrixService: MatrixService,
+    private val topicRepository: TopicRepository
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -106,10 +111,57 @@ class TeacherController(
         return ResponseEntity.ok(teacher.subjects.toList())
     }
 
+    @GetMapping("/subjects/{subjectId}/topics")
+    fun getTopics(@PathVariable subjectId: Long): ResponseEntity<List<Map<String, Any>>> {
+        val topics = topicRepository.findBySubjectId(subjectId)
+        val response = topics.map {
+            mapOf(
+                "id" to it.id,
+                "title" to it.title,
+                "description" to (it.description ?: "")
+            )
+        }
+        return ResponseEntity.ok(response)
+    }
+
     @GetMapping("/timetable/{username}")
     fun teacherTimetable(@PathVariable username: String): ResponseEntity<ApiResponse<List<MatrixLessonDto>>> {
         val lessons = matrixService.getTeacherTimetableByUsername(username)
         return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
+    }
+
+    @GetMapping("/lessons/today")
+    fun getTodayLessons(principal: Principal): ResponseEntity<List<Map<String, Any>>> {
+        val username = principal.name
+        val allLessons = matrixService.getTeacherTimetableByUsername(username)
+        val now = LocalDateTime.now()
+        val currentDay = now.dayOfWeek
+        val currentTime = now.toLocalTime()
+
+        val todayLessons = allLessons.filter { it.timeslot?.dayOfWeek == currentDay }
+        
+        val response = todayLessons.map { lesson ->
+            val slot = lesson.timeslot
+            // Dars boshlanishidan 10 daqiqa oldin va dars tugaguniga qadar tugma chiqsin
+            val canStart = slot != null && 
+                currentTime.isAfter(slot.startTime.minusMinutes(10)) && 
+                currentTime.isBefore(slot.endTime)
+
+            mapOf(
+                "id" to (lesson.id ?: 0L),
+                "subjectId" to (lesson.subject?.id ?: 0L),
+                "subjectName" to (lesson.subject?.name ?: ""),
+                "groupName" to (lesson.groups.joinToString(", ") { it.name }),
+                "groupIds" to (lesson.groups.map { it.id }),
+                "room" to (lesson.room?.roomNumber ?: ""),
+                "startTime" to (slot?.startTime?.toString() ?: ""),
+                "endTime" to (slot?.endTime?.toString() ?: ""),
+                "canStart" to canStart,
+                "isActive" to lesson.isActive
+            )
+        }
+
+        return ResponseEntity.ok(response)
     }
 }
 

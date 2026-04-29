@@ -5,6 +5,8 @@ import com.uniface.dto.matrix.MatrixLessonDto
 import com.uniface.entity.Lesson
 import com.uniface.matrix.service.MatrixService
 import com.uniface.repository.AttendanceRepository
+import com.uniface.service.AttendanceService
+import java.security.Principal
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/student")
 class StudentController(
     private val attendanceRepo: AttendanceRepository,
+    private val attendanceService: AttendanceService,
     private val matrixService: MatrixService
 ) {
 
@@ -25,6 +28,7 @@ class StudentController(
         return ResponseEntity.ok(list)
     }
 
+
     @GetMapping("/timetable/{username}")
     fun studentTimetable(
         @PathVariable username: String
@@ -33,6 +37,12 @@ class StudentController(
         val lessons = matrixService.getStudentTimetableByUsername(username)
 
         return ResponseEntity.ok(ApiResponse.success(lessons.toDto(), "OK"))
+    }
+
+    @GetMapping("/attendance/stats")
+    fun getStats(principal: Principal): ResponseEntity<Any> {
+        val stats = attendanceService.getStudentDetailedStats(principal.name)
+        return ResponseEntity.ok(stats)
     }
 }
 

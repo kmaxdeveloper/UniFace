@@ -78,4 +78,13 @@ class AdminCreateController(
         adminService.createLesson(subjectId, teacherId, groupIds, roomId, timeslotId, type)
         ResponseEntity.ok("Dars jadvalga qo'shildi!")
     } catch (e: Exception) { ResponseEntity.badRequest().body(e.message) }
+
+    @PostMapping("/set-topic")
+    fun addTopic(
+        @RequestParam title: String,
+        @RequestParam(required = false) description: String?,
+        @RequestParam subjectId: Long
+    ) = try {
+        ResponseEntity.ok(adminService.saveTopic(title, description, subjectId))
+    } catch (e: Exception) { ResponseEntity.badRequest().body(e.message) }
 }

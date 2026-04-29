@@ -8,5 +8,7 @@ data class StartLessonRequest(
     // Bitta yoki bir nechta guruhni yubora olish uchun List qilamiz
     val groupIds: List<Long>,
     // Dars turi: LECTURE (Ma'ruza) yoki PRACTICE (Amaliyot)
-    val lessonType: LessonType = LessonType.PRACTICE
+    val lessonType: LessonType = LessonType.PRACTICE,
+    // Yangi: Sillabusdagi mavzu ID-si
+    val topicId: Long? = null
 )

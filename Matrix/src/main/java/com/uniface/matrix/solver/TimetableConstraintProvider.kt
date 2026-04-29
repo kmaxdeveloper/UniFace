@@ -26,11 +26,7 @@ class TimetableConstraintProvider : ConstraintProvider {
         preferEarlyPairs(factory),
         maxLessonsPerDayPerGroup(factory),
         maxLessonsPerDayPerTeacher(factory),
-        compactGroupSchedule(factory),
         spreadLessonsEvenly(factory),
-        compactTeacherSchedule(factory),
-        spreadTeacherLessonsEvenly(factory),
-        avoidTooManyConsecutiveLessons(factory),
         groupRoomStability(factory),
         distributeTeacherLoadEvenly(factory),
         minimizeGroupGaps(factory),
@@ -122,51 +118,7 @@ class TimetableConstraintProvider : ConstraintProvider {
         return hasSubjectSkill
     }
 
-    // Buni "SOFT" bo'limiga qo'sh:
-    private fun compactTeacherSchedule(factory: ConstraintFactory): Constraint =
-        factory.forEachUniquePair(
-            Lesson::class.java,
-            Joiners.equal { it.teacher?.id },
-            Joiners.equal { it.timeslot?.dayOfWeek }
-        )
-            .filter { a, b ->
-                a.timeslot != null && b.timeslot != null &&
-                        abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) > 1
-            }
-            .penalize(HardSoftScore.ONE_SOFT) { a, b ->
-                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
-            }
-            .asConstraint("Compact teacher schedule")
-
-    private fun spreadTeacherLessonsEvenly(factory: ConstraintFactory): Constraint =
-        factory.forEach(Lesson::class.java)
-            .filter { it.timeslot != null && it.teacher != null }
-            .groupBy(
-                { it.teacher!!.id },
-                { it.timeslot!!.dayOfWeek },
-                ConstraintCollectors.count()
-            )
-            .filter { _, _, count -> count > 3 } // Kuniga 3 tadan ko'p dars bo'lsa jarima
-            .penalize(HardSoftScore.ofSoft(2)) { _, _, count -> (count - 3) * 2 }
-            .asConstraint("Spread teacher lessons evenly")
-
-    /**
-     * Domlalar ketma-ket 3-4 ta para dars o'tsa, charchab qolishadi.
-     * AIga "ketma-ket darslarni kamaytir" deymiz
-     */
-    private fun avoidTooManyConsecutiveLessons(factory: ConstraintFactory): Constraint {
-        return factory.forEachUniquePair(Lesson::class.java,
-            Joiners.equal { it.teacher?.id },
-            Joiners.equal { it.timeslot?.dayOfWeek }
-        )
-            .filter { a, b ->
-                // Agar darslar ketma-ket bo'lsa (masalan 1 va 2, yoki 2 va 3)
-                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) == 1
-            }
-            // Bu darslar soni ko'paygani sari jarima ham o'sib boradi
-            .penalize(HardSoftScore.ofSoft(5))
-            .asConstraint("Avoid too many consecutive lessons")
-    }
+    // Keraksiz va xato shartlar (avoidTooManyConsecutiveLessons, compactTeacherSchedule) olib tashlandi, chunki TATUda ketma-ket dars bo'lishi maqsadga muvofiq (oyna bo'lmasligi uchun).
 
     /**
      * Talabalar har para har xil korpus yoki qavatga yugurib yurmasligi uchun,
@@ -197,10 +149,9 @@ class TimetableConstraintProvider : ConstraintProvider {
                 { it.timeslot!!.dayOfWeek },
                 ConstraintCollectors.count()
             )
-            .filter { _, _, count -> count > 4 }
-            // Yangi API: penalize ichida Score ob'ekti berilmaydi, faqat int jarima beriladi
-            .penalize(HardSoftScore.ONE_HARD) { _, _, count -> (count - 4) * 10 }
-            .asConstraint("Teacher max 4 lessons per day")
+            .filter { _, _, count -> count > 3 } // TATU tizimi: bir kunda max 3 ta dars
+            .penalize(HardSoftScore.ONE_HARD) { _, _, count -> (count - 3) * 50 }
+            .asConstraint("Teacher max 3 lessons per day")
     }
 
     fun distributeTeacherLoadEvenly(constraintFactory: ConstraintFactory): Constraint {
@@ -264,24 +215,10 @@ class TimetableConstraintProvider : ConstraintProvider {
             }
             .asConstraint("Spread lessons evenly")
 
-    private fun compactGroupSchedule(factory: ConstraintFactory): Constraint =
-        factory.forEachUniquePair(
-            Lesson::class.java,
-            Joiners.equal { it.groups.firstOrNull()?.id },
-            Joiners.equal { it.timeslot?.dayOfWeek }
-        )
-            .filter { a, b ->
-                a.timeslot != null && b.timeslot != null &&
-                        abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) > 1
-            }
-            .penalize(HardSoftScore.ONE_SOFT) { a, b ->
-                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
-            }
-            .asConstraint("Compact group schedule")
+    // compactGroupSchedule olib tashlandi, chunki minimizeGroupGaps mavjud.
 
     /**
-     * Guruhlar uchun bo'shliqlarni kamaytirish (SOFT constraint)
-     * Agar guruh kuniga 2 yoki ko'p dars o'tsa, ular ketma-ket bo'lishi kerak
+     * Guruhlar uchun bo'shliqlarni kamaytirish (TATU: Oyna bo'lmasligi qat'iy talab)
      */
     private fun minimizeGroupGaps(factory: ConstraintFactory): Constraint =
         factory.forEachUniquePair(
@@ -293,14 +230,14 @@ class TimetableConstraintProvider : ConstraintProvider {
                 a.timeslot != null && b.timeslot != null &&
                         abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) > 1
             }
-            .penalize(HardSoftScore.ofSoft(3)) { a, b ->
-                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
+            .penalize(HardSoftScore.ofSoft(10)) { a, b ->
+                // Oyna hajmi kattalashgani sari qattiqroq jarima
+                (abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1) * 10
             }
             .asConstraint("Minimize gaps in group schedule")
 
     /**
-     * Ustozlar uchun bo'shliqlarni kamaytirish (SOFT constraint)
-     * Agar ustoz kuniga 2 yoki ko'p dars o'tsa, ular ketma-ket bo'lishi kerak
+     * Ustozlar uchun bo'shliqlarni kamaytirish (TATU: Oyna bo'lmasligi qat'iy talab)
      */
     private fun minimizeTeacherGaps(factory: ConstraintFactory): Constraint =
         factory.forEachUniquePair(
@@ -312,8 +249,9 @@ class TimetableConstraintProvider : ConstraintProvider {
                 a.timeslot != null && b.timeslot != null &&
                         abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) > 1
             }
-            .penalize(HardSoftScore.ofSoft(3)) { a, b ->
-                abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1
+            .penalize(HardSoftScore.ofSoft(10)) { a, b ->
+                // Oyna hajmi kattalashgani sari qattiqroq jarima
+                (abs(a.timeslot!!.pairNumber - b.timeslot!!.pairNumber) - 1) * 10
             }
             .asConstraint("Minimize gaps in teacher schedule")
 }

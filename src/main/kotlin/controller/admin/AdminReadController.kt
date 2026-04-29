@@ -85,4 +85,7 @@ class AdminReadController(
     @GetMapping("/get-rooms/check-availability")
     fun checkRoom(@RequestParam roomId: Long, @RequestParam timeslotId: Long) =
         ResponseEntity.ok(adminService.isRoomAvailable(roomId, timeslotId))
+
+    @GetMapping("/get-topics/subject/{subjectId}")
+    fun getTopics(@PathVariable subjectId: Long) = ResponseEntity.ok(adminService.getTopicsBySubject(subjectId))
 }

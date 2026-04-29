@@ -1,10 +1,9 @@
 package com.uniface.service
 
-import com.uniface.dto.AttendanceRecordDto
-import com.uniface.dto.AttendanceStatsDto
-import com.uniface.dto.StartLessonRequest
+import com.uniface.dto.*
 import com.uniface.entity.Attendance
 import com.uniface.entity.Lesson
+import java.time.format.DateTimeFormatter
 import com.uniface.exception.AlreadyMarkedException
 import com.uniface.exception.InvalidAttendanceException
 import com.uniface.exception.StudentNotFoundException
@@ -25,6 +24,7 @@ class AttendanceService(
     private val subjectRepository: SubjectRepository,
     private val lessonRepository: LessonRepository,
     private val teacherRepository: TeacherRepository,
+    private val topicRepository: TopicRepository,
     private val qrService: QrService
 ) {
     //InvalidAttendanceException
@@ -171,6 +171,8 @@ class AttendanceService(
                 type = request.lessonType
                 this.groups = groups.toMutableSet() // Guruhlarni yangilaymiz
                 isActive = true // Faolligini tasdiqlaymiz
+                // Mavzuni qo'shish
+                topic = request.topicId?.let { topicRepository.findById(it).orElse(null) }
             }
 
             // QOLGANLARINI YOPISH:
@@ -195,9 +197,70 @@ class AttendanceService(
                 groups = groups.toMutableSet(),
                 type = request.lessonType,
                 startTime = LocalDateTime.now(),
-                isActive = true
+                isActive = true,
+                topic = request.topicId?.let { topicRepository.findById(it).orElse(null) }
             )
             lessonRepository.save(newLesson).id!!
         }
+    }
+
+    fun getStudentDetailedStats(username: String): StudentAttendanceStatsDto {
+        val student = studentRepository.findByUserUsername(username)
+            ?: throw EntityNotFoundException("Talaba topilmadi")
+        
+        // 1. Talaba guruhining barcha o'tilgan darslari (startTime != null)
+        val allLessonsHeld = lessonRepository.findAllByGroupsId(student.group?.id ?: 0L)
+            .filter { it.startTime != null }
+        
+        // 2. Talabaning barcha davomat yozuvlari
+        val attendanceRecords = attendanceRepository.findByStudentStudentId(student.studentId)
+        val attendedLessonIds = attendanceRecords.map { it.lesson?.id }.toSet()
+
+        // 3. Fanlar bo'yicha guruhlash
+        val lessonsBySubject = allLessonsHeld.groupBy { it.subject?.id }
+        
+        val subjectDetails = lessonsBySubject.map { (subjectId, lessons) ->
+            val subjectName = lessons.first().subject?.name ?: "Noma'lum"
+            val total = lessons.size
+            val present = lessons.count { attendedLessonIds.contains(it.id) }
+            val missed = total - present
+            val percent = if (total > 0) (missed * 100.0 / total) else 0.0
+            
+            val missedTopics = lessons
+                .filter { !attendedLessonIds.contains(it.id) }
+                .map { MissedTopicDto(it.topic?.title ?: "Mavzu ko'rsatilmagan", it.startTime?.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")) ?: "") }
+
+            val risk = when {
+                percent >= 23.0 -> "DANGER"
+                percent >= 15.0 -> "WARNING"
+                else -> "SAFE"
+            }
+
+            SubjectAttendanceDetailDto(
+                subjectId = subjectId ?: 0L,
+                subjectName = subjectName,
+                totalLessons = total,
+                presentCount = present,
+                missedCount = missed,
+                missedPercentage = percent,
+                missedTopics = missedTopics,
+                riskStatus = risk
+            )
+        }
+
+        val totalMissed = subjectDetails.sumOf { it.missedCount } * 2 // Har bir para 2 soat
+        val maxMissedPercent = if (subjectDetails.isNotEmpty()) subjectDetails.maxOf { it.missedPercentage } else 0.0
+        
+        val overallRisk = when {
+            maxMissedPercent >= 23.0 -> "DANGER"
+            maxMissedPercent >= 15.0 -> "WARNING"
+            else -> "SAFE"
+        }
+
+        return StudentAttendanceStatsDto(
+            subjects = subjectDetails,
+            totalMissedHours = totalMissed,
+            overallRiskStatus = overallRisk
+        )
     }
 }

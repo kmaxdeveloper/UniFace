@@ -58,4 +58,10 @@ class AdminDeleteController(private val adminService: AdminService) {
         adminService.deleteSubject(id)
         ResponseEntity.ok("Fan muvaffaqiyatli o'chirildi")
     } catch (e: Exception) { ResponseEntity.badRequest().body(e.message) }
+
+    @DeleteMapping("/delete-topic/{id}")
+    fun deleteTopic(@PathVariable id: Long) = try {
+        adminService.deleteTopic(id)
+        ResponseEntity.ok("Mavzu muvaffaqiyatli o'chirildi")
+    } catch (e: Exception) { ResponseEntity.badRequest().body(e.message) }
 }

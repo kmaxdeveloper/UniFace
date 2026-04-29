@@ -19,6 +19,7 @@ import com.uniface.repository.matrix.DepartmentRepository
 import com.uniface.repository.matrix.FacultyRepository
 import com.uniface.repository.matrix.RoomRepository
 import com.uniface.repository.matrix.TimeslotRepository
+import com.uniface.repository.TopicRepository
 import org.springframework.stereotype.Service
 
 @Service
@@ -33,7 +34,8 @@ class AdminService(
     private val teacherRepository: TeacherRepository,
     private val groupRepository: GroupRepository,
     private val studentRepository: StudentRepository,
-    private val attendanceRepository: AttendanceRepository
+    private val attendanceRepository: AttendanceRepository,
+    private val topicRepository: TopicRepository
 ) {
 
     // Yangi kafedra qo'shish
@@ -286,5 +288,31 @@ class AdminService(
         // Shu xonada va shu vaqtda dars bormi?
         val exists = lessonRepository.existsByRoomIdAndTimeslotId(roomId, timeslotId)
         return !exists // Agar dars bo'lmasa true (ya'ni bo'sh) qaytaradi
+    }
+
+    // =================== TOPIC (Mavzu) CRUD =====================
+
+    fun saveTopic(title: String, description: String?, subjectId: Long): com.uniface.entity.Topic {
+        val subject = subjectRepository.findById(subjectId)
+            .orElseThrow { Exception("Fan topilmadi (ID: $subjectId)") }
+        val topic = com.uniface.entity.Topic(title, subject, description)
+        return topicRepository.save(topic)
+    }
+
+    fun updateTopic(id: Long, title: String, description: String?): com.uniface.entity.Topic {
+        val topic = topicRepository.findById(id)
+            .orElseThrow { Exception("Mavzu topilmadi (ID: $id)") }
+        topic.title = title
+        topic.description = description
+        return topicRepository.save(topic)
+    }
+
+    fun deleteTopic(id: Long) {
+        if (!topicRepository.existsById(id)) throw Exception("Mavzu topilmadi!")
+        topicRepository.deleteById(id)
+    }
+
+    fun getTopicsBySubject(subjectId: Long): List<com.uniface.entity.Topic> {
+        return topicRepository.findBySubjectId(subjectId)
     }
 }

@@ -102,4 +102,14 @@ class AdminUpdateController(
     }
 
     // Kelajakda talaba yoki boshqa ma'lumotlarni update qilish kodi ham shu yerga tushadi
+    @PutMapping("/update-topic/{id}")
+    fun updateTopic(
+        @PathVariable id: Long,
+        @RequestParam title: String,
+        @RequestParam(required = false) description: String?
+    ) = try {
+        ResponseEntity.ok(adminService.updateTopic(id, title, description))
+    } catch (e: Exception) {
+        ResponseEntity.badRequest().body(e.message)
+    }
 }

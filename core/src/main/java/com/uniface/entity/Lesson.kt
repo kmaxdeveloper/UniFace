@@ -50,5 +50,9 @@ class Lesson(
     var startTime: LocalDateTime = LocalDateTime.now(),
     var endTime: LocalDateTime? = null,
 
-    var isActive: Boolean = false
+    var isActive: Boolean = false,
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "topic_id")
+    var topic: Topic? = null
 )
