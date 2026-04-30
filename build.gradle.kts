@@ -50,6 +50,7 @@ dependencies {
     implementation(project(":Matrix"))
     implementation(project(":core"))
     implementation(project(":MizanAi"))
+    implementation(project(":Iris"))
     implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     implementation("com.google.zxing:core:3.5.2") // QR generatsiya
