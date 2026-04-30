@@ -15,6 +15,7 @@ import com.uniface.repository.UserRepository
 import com.uniface.service.AttendanceService
 import com.uniface.service.FaceService
 import com.uniface.service.TeacherService
+import com.uniface.iris.service.IrisService
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.context.SecurityContextHolder

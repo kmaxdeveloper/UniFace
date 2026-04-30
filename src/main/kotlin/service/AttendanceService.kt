@@ -7,6 +7,8 @@ import com.uniface.exception.AlreadyMarkedException
 import com.uniface.exception.InvalidAttendanceException
 import com.uniface.exception.StudentNotFoundException
 import com.uniface.repository.*
+import com.uniface.iris.service.IrisService
+import com.uniface.iris.model.IrisActivity
 import jakarta.persistence.EntityNotFoundException
 import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
@@ -141,11 +143,10 @@ class AttendanceService(
         try {
             // Studentga ball berish
             student.user?.username?.let { 
-                irisService.addPointsToStudent(it, com.uniface.iris.IrisActivity.STUDENT_ATTENDANCE) 
+                irisService.addPointsToStudent(it, IrisActivity.ATTENDANCE_MARK) 
             }
-            // Ustozga ball berish (minimal miqdorda, har bir talaba uchun)
             lesson.teacher?.user?.username?.let {
-                irisService.addPointsToTeacher(it, com.uniface.iris.IrisActivity.TEACHER_STUDENT_ATTENDANCE)
+                irisService.addPointsToTeacher(it, IrisActivity.TEACHER_ATTENDANCE_BONUS)
             }
         } catch (e: Exception) {
             // Ball berishda xatolik bo'lsa darsni to'xtatmaymiz, lekin log qilamiz

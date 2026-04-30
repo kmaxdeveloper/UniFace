@@ -9,6 +9,7 @@ import com.uniface.repository.AttendanceRepository
 import com.uniface.repository.StudentRepository
 import com.uniface.repository.UserRepository
 import com.uniface.service.AttendanceService
+import com.uniface.iris.service.IrisService
 import java.security.Principal
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.GetMapping

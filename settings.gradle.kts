@@ -4,5 +4,6 @@ plugins {
 rootProject.name = "UniFace"
 include("Matrix")
 include("MizanAi")
+include("Iris")
 include("Matrix")
 include("core")

@@ -1,8 +1,8 @@
-package com.uniface.service
+package com.uniface.iris.service
 
 import com.uniface.entity.Student
 import com.uniface.entity.Teacher
-import com.uniface.iris.IrisActivity
+import com.uniface.iris.model.IrisActivity
 import com.uniface.repository.StudentRepository
 import com.uniface.repository.TeacherRepository
 import org.springframework.stereotype.Service
@@ -19,14 +19,12 @@ class IrisService(
         val student = studentRepository.findByUserUsername(username) ?: return
         student.irisPoints += activity.points
         
-        // Level calculation logic (Simplified)
         val newLevel = calculateLevel(student.irisPoints)
         if (newLevel > student.irisLevel) {
             student.irisLevel = newLevel
         }
         
         studentRepository.save(student)
-        // TODO: Log transaction to DB
     }
 
     @Transactional
@@ -34,7 +32,6 @@ class IrisService(
         val teacher = teacherRepository.findByUserUsername(username) ?: return
         teacher.points += activity.points
         
-        // Teacher Authority Level calculation
         val newLevel = calculateTeacherLevel(teacher.points)
         if (newLevel > teacher.irisLevel) {
             teacher.irisLevel = newLevel
@@ -44,10 +41,8 @@ class IrisService(
     }
 
     private fun calculateLevel(points: Int): Int {
-        // 1-10 darajalar tezroq (har 200 ball bitta level)
-        // 11-20 darajalar qiyinroq (har 1000 ball bitta level)
         return when {
-            points < 2000 -> (points / 200) + 1 // 1 dan 10 gacha
+            points < 2000 -> (points / 200) + 1
             else -> {
                 val baseLevel = 10
                 val remainingPoints = points - 2000
@@ -58,7 +53,6 @@ class IrisService(
     }
 
     private fun calculateTeacherLevel(points: Int): Int {
-        // Teacher darajalari ham ball va stajga qarab
         return when {
             points < 500 -> 1
             points < 1500 -> 2
