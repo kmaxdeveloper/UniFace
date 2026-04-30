@@ -59,6 +59,9 @@ class SecurityConfig(
                 auth.requestMatchers("/api/v1/teacher/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
                 auth.requestMatchers("/api/v1/face/**").hasAnyAuthority("ROLE_ADMIN", "ROLE_TEACHER")
 
+                auth.requestMatchers("/api/v1/iris/games/**").hasAnyAuthority("ROLE_STUDENT", "ROLE_ADMIN")
+                auth.requestMatchers("/api/v1/iris/**").hasAnyAuthority("ROLE_STUDENT", "ROLE_TEACHER", "ROLE_ADMIN")
+
                 auth.anyRequest().authenticated()
             }
             // 2. JWT filtri WebSocket yo'llariga xalaqit bermasligi kerak
