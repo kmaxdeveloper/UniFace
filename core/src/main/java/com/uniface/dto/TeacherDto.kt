@@ -6,7 +6,7 @@ data class TeacherDto(
     val password: String,
     val department: String,
     val faculty: String,
-    val points: Int = 0,
+    val points: Double = 0.0,
     val status: Boolean = true,
     val subjectIds: List<Long> = emptyList() // Faqat fanlar qoldi ✅
 )
