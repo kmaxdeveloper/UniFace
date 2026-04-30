@@ -21,7 +21,7 @@ class Teacher(
 
     var department: String = "",    // 7. Kafedra
     var faculty: String = "",       // 7. Fakultet
-    var points: Int = 0,            // 6. Ballar (Rag'bat)
+    var points: Double = 0.0,            // 6. Ballar (Rag'bat)
     var irisLevel: Int = 1,
     var experienceYears: Int = 0,   // Staj
 

@@ -24,6 +24,6 @@ class Student(
     @JsonBackReference
     var user: User? = null,
 
-    var irisPoints: Int = 0,
+    var irisPoints: Double = 0.0,
     var irisLevel: Int = 1
 )

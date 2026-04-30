@@ -16,16 +16,19 @@ class GameController(
 
     // Talabalar o'yin o'ynab bo'lgach ball olishi uchun
     @PostMapping("/reward")
-    fun rewardForGame(principal: Principal): ResponseEntity<Map<String, Any>> {
+    fun rewardForGame(
+        principal: Principal,
+        @org.springframework.web.bind.annotation.RequestParam(defaultValue = "big") type: String
+    ): ResponseEntity<Map<String, Any>> {
         val username = principal.name
+        val activity = if (type == "small") IrisActivity.GAME_REWARD_SMALL else IrisActivity.GAME_REWARD_BIG
         
-        // TODO: Kelajakda kunlik limit qo'shish (masalan, kunda max 5 marta ball olish mumkin)
-        irisService.addPointsToStudent(username, IrisActivity.GAME_REWARD)
+        irisService.addPointsToStudent(username, activity)
         
         return ResponseEntity.ok(mapOf(
             "success" to true,
-            "message" to "Tabriklaymiz! +2 IRIS ball berildi.",
-            "pointsAdded" to 2
+            "message" to "Tabriklaymiz! +${activity.points} IRIS ball berildi.",
+            "pointsAdded" to activity.points
         ))
     }
 }

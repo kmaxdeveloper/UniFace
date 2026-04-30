@@ -40,24 +40,24 @@ class IrisService(
         teacherRepository.save(teacher)
     }
 
-    private fun calculateLevel(points: Int): Int {
+    private fun calculateLevel(points: Double): Int {
         return when {
-            points < 2000 -> (points / 200) + 1
+            points < 2000.0 -> (points / 200.0).toInt() + 1
             else -> {
                 val baseLevel = 10
-                val remainingPoints = points - 2000
-                val addedLevels = remainingPoints / 1000
+                val remainingPoints = points - 2000.0
+                val addedLevels = (remainingPoints / 1000.0).toInt()
                 (baseLevel + addedLevels).coerceAtMost(20)
             }
         }
     }
 
-    private fun calculateTeacherLevel(points: Int): Int {
+    private fun calculateTeacherLevel(points: Double): Int {
         return when {
-            points < 500 -> 1
-            points < 1500 -> 2
-            points < 4000 -> 3
-            points < 10000 -> 4
+            points < 500.0 -> 1
+            points < 1500.0 -> 2
+            points < 4000.0 -> 3
+            points < 10000.0 -> 4
             else -> 5
         }
     }
