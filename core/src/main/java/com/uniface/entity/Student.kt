@@ -22,5 +22,8 @@ class Student(
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @JsonBackReference
-    var user: User? = null // Default null qildik
+    var user: User? = null,
+
+    var irisPoints: Int = 0,
+    var irisLevel: Int = 1
 )

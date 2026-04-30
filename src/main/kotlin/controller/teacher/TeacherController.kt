@@ -38,7 +38,8 @@ class TeacherController(
     private val userRepository: UserRepository,
     private val teacherRepository: TeacherRepository,
     private val matrixService: MatrixService,
-    private val topicRepository: TopicRepository
+    private val topicRepository: TopicRepository,
+    private val irisService: IrisService
 ) {
 
     // Auditoriyani ommaviy rasmga olish (100 kishigacha)
@@ -162,6 +163,21 @@ class TeacherController(
         }
 
         return ResponseEntity.ok(response)
+    }
+    @GetMapping("/profile")
+    fun getProfile(principal: Principal): ResponseEntity<Map<String, Any>> {
+        val teacher = teacherRepository.findByUserUsername(principal.name)
+            ?: return ResponseEntity.notFound().build()
+            
+        return ResponseEntity.ok(mapOf(
+            "id" to teacher.id!!,
+            "fullName" to teacher.fullName,
+            "department" to teacher.department,
+            "faculty" to teacher.faculty,
+            "points" to teacher.points,
+            "irisLevel" to teacher.irisLevel,
+            "irisLevelName" to irisService.getTeacherLevelName(teacher.irisLevel, teacher.experienceYears)
+        ))
     }
 }
 

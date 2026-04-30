@@ -24,7 +24,8 @@ class AttendanceService(
     private val lessonRepository: LessonRepository,
     private val teacherRepository: TeacherRepository,
     private val topicRepository: TopicRepository,
-    private val qrService: QrService
+    private val qrService: QrService,
+    private val irisService: IrisService
 ) {
     //InvalidAttendanceException
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
@@ -135,6 +136,21 @@ class AttendanceService(
         )
 
         val savedAttendance = attendanceRepository.save(newAttendance)
+
+        // --- IRIS INTEGRATION ---
+        try {
+            // Studentga ball berish
+            student.user?.username?.let { 
+                irisService.addPointsToStudent(it, com.uniface.iris.IrisActivity.STUDENT_ATTENDANCE) 
+            }
+            // Ustozga ball berish (minimal miqdorda, har bir talaba uchun)
+            lesson.teacher?.user?.username?.let {
+                irisService.addPointsToTeacher(it, com.uniface.iris.IrisActivity.TEACHER_STUDENT_ATTENDANCE)
+            }
+        } catch (e: Exception) {
+            // Ball berishda xatolik bo'lsa darsni to'xtatmaymiz, lekin log qilamiz
+            println("IRIS Point Awarding Error: ${e.message}")
+        }
 
         return savedAttendance.toDto()
     }

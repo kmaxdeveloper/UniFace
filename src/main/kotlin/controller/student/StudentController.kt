@@ -24,7 +24,8 @@ class StudentController(
     private val attendanceService: AttendanceService,
     private val matrixService: MatrixService,
     private val studentRepository: StudentRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val irisService: IrisService
 ) {
 
     // Talaba o'zining hamma davomatlarini ko'rishi uchun
@@ -60,7 +61,10 @@ class StudentController(
             "fullName" to student.fullName,
             "username" to (student.user?.username ?: ""),
             "groupName" to (student.group?.name ?: "Noma'lum"),
-            "faceId" to student.faceId
+            "faceId" to student.faceId,
+            "irisPoints" to student.irisPoints,
+            "irisLevel" to student.irisLevel,
+            "irisLevelName" to irisService.getStudentLevelName(student.irisLevel)
         ))
     }
 
